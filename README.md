@@ -1,12 +1,10 @@
-# cemt_core, Paper 3A skeleton (v0.2)
+# cemt_core, Paper 3A skeleton (v0.1)
 
 Frozen reference implementation of the CEMT/STA model, rebuilt from Paper 1A
 (Interface, Execution Pathway, Authority), Paper 1B (relation levels, Fan-out,
 Cut) and Paper 2 (Structure, Time, Adaptation). This skeleton delivers the
 scenario specification and the relation layer with its derived properties.
-v0.2 adds the network builder, the spec generator for large runs, Layers 1
-to 5 with the IAE entry gate, the step loop with STA ablation, and the locked
-collapse rule. The Docker renderer is the next item.
+The step loop, network builder and Docker renderer are the next three items.
 
 ## Decisions built in
 
@@ -23,12 +21,13 @@ collapse rule. The Docker renderer is the next item.
 cemt_core/
   spec.py         scenario specification, YAML load/dump, validation
   relations.py    relation table; Supply, Fan-out, Cut, structural capability
-  network.py      NetworkState from a spec; generate_spec() from Code80-style
-                  structural parameters so large runs are specs too
-  layers.py       Layers 1 to 5 as pure functions; IAE Layer 1 gate
-  step.py         run_one_trial, run_scenario, STA ablation, collapse rule
-  rho_k.py        (next) NGM spectral radius, moved from Code80
-  benchmarks.py   (next) B1 to B6 and stage mini-tests, re-pointed
+  network.py      (next) builds the multiplex network from a spec; replaces
+                  Code80 build_network, keyed on the relation table
+  layers.py       (next) Layers 1 to 5 as pure functions, IAE Layer 1
+  step.py         (next) run_one_trial with deterministic mode and ablation
+  rho_k.py        (next) NGM spectral radius, moved unchanged from Code80
+  collapse.py     (next) locked collapse rule, moved unchanged
+  benchmarks.py   (next) B1 to B6 and stage mini-tests, moved and re-pointed
 scenarios/
   micro_01_supply_chain.yaml   eight-node correspondence scenario
 docker_render/    (separate package, next) spec -> compose + probes
@@ -65,41 +64,13 @@ order and observation lag must agree ordinally. No magnitudes.
 
 Tier 3, rates. Not claimed.
 
-## Modelling facts to carry into 3A
-
-* Connection relations are symmetric: zone co-membership admits in both
-  directions, as in Code80. Channel, control-plane and dependency relations
-  are directed.
-* In deterministic mode Layer 5 remediation does not fire and phantoms are
-  never forced; the run traces structural reach only. Tier 2 runs stochastic.
-* The `via` label on a reached node lists every relation class that offered
-  access in that step, in evaluation order (connection, channel, control
-  plane); dependency hits are recorded by Layer 3 only when Layer 2 did not
-  already reach the node in the same step.
-* Cut density is reported per relation class (`cut_density_by_class()`).
-* Performance: Layer 2 loops are Python-level, roughly 0.2 s per trial at
-  N=300. Vectorisation is needed before the 1000 x 500 validation budget.
-
 ## Run the skeleton
 
 ```
 python3 -c "
 from cemt_core import load_spec, RelationTable
-spec = load_spec('scenarios/micro_01_supply_chain.yaml')
-rt = RelationTable(spec); print(rt.summary()); print(rt.cut_table())
-r = run_scenario(spec)[0]; print(r['reached']); print(r['planes_owned'])"
-```
-
-Generated stochastic run with STA ablation:
-
-```
-python3 -c "
-import dataclasses
-from cemt_core import *
-g = generate_spec(dict(node_count=300), seed=7)
-print('STA', summarise(run_scenario(g, n_trials=20)))
-g2 = dataclasses.replace(g, ablation=AblationSpec(adaptation=False))
-print('ST ', summarise(run_scenario(g2, n_trials=20)))"
+rt = RelationTable(load_spec('scenarios/micro_01_supply_chain.yaml'))
+print(rt.summary()); print(rt.cut_table())"
 ```
 
 ## Freeze checklist (for when the model is complete)
