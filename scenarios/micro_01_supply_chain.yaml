@@ -1,0 +1,99 @@
+id: micro_01_supply_chain
+spec_version: "0.1"
+description: >
+  Eight-node micro-system. A vendor update server (external governance)
+  supplies Execution Pathway to two hosts through a channel; a config server
+  supplies Authority to three hosts through a control plane; a database is a
+  dependency of two application hosts and is the sole supplier of X to
+  app-2 (a Cut). Structural correspondence scenario: deterministic mode.
+
+governance:
+  - id: estate
+    defender_controlled: true
+  - id: vendor
+    defender_controlled: false
+
+nodes:
+  - id: vendor-update
+    governance: vendor
+    interface: true
+    execution_pathway: true
+    authority: true
+    state_object: update_feed
+    visible: false
+  - id: config-server
+    governance: estate
+    interface: false
+    execution_pathway: true
+    authority: true
+    state_object: policy_store
+    zones: [1]
+  - id: web-1
+    governance: estate
+    interface: true
+    state_object: web_content
+    zones: [0, 1]
+  - id: web-2
+    governance: estate
+    interface: true
+    state_object: web_content
+    zones: [0, 2]
+  - id: app-1
+    governance: estate
+    interface: false
+    state_object: orders
+    zones: [1]
+  - id: app-2
+    governance: estate
+    interface: false
+    execution_pathway: false     # X supplied only by db-1 (the Cut)
+    state_object: orders
+    zones: [2]
+  - id: db-1
+    governance: estate
+    interface: false
+    state_object: records
+    zones: [1, 2]
+  - id: host-3
+    governance: estate
+    interface: false
+    state_object: files
+    zones: [1]
+
+relations:
+  # connection (zone adjacency) supplies Interface to peers
+  - {supplier: web-1, receiver: app-1, condition: I, relation_class: connection}
+  - {supplier: web-2, receiver: app-2, condition: I, relation_class: connection}
+  - {supplier: web-1, receiver: config-server, condition: I, relation_class: connection}
+  - {supplier: app-1, receiver: db-1, condition: I, relation_class: connection}
+  - {supplier: app-2, receiver: db-1, condition: I, relation_class: connection}
+  # vendor channel supplies Execution Pathway across the governance boundary
+  - {supplier: vendor-update, receiver: web-1, condition: X, relation_class: channel, conferral: true, group: ch-vendor}
+  - {supplier: vendor-update, receiver: web-2, condition: X, relation_class: channel, conferral: true, group: ch-vendor}
+  # control plane supplies Authority to its members (conferral on takeover)
+  - {supplier: config-server, receiver: app-1, condition: A, relation_class: control_plane, conferral: true, group: cp-main}
+  - {supplier: config-server, receiver: host-3, condition: A, relation_class: control_plane, conferral: true, group: cp-main}
+  - {supplier: config-server, receiver: db-1, condition: A, relation_class: control_plane, conferral: true, group: cp-main}
+  # dependency supplies Execution Pathway; db-1 is the only X supply to app-2
+  - {supplier: db-1, receiver: app-1, condition: X, relation_class: dependency}
+  - {supplier: db-1, receiver: app-2, condition: X, relation_class: dependency}
+
+entry_node: web-1
+deterministic: true
+
+ablation:
+  structure: true
+  time: true
+  adaptation: true
+
+time:
+  latency_steps: 2
+  max_steps: 30
+
+adaptation:
+  remediation_capability: 0.9
+  actions_allowed: [remediate]
+
+rates:
+  threat_capability: 1.0
+  phantom_channel_rate: 0.0

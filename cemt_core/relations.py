@@ -1,0 +1,138 @@
+"""
+Relation table and derived structural properties (Paper 1B).
+
+Fan-out(i, class)   number of distinct receivers node i supplies through a
+                    given relation class. Counted separately at system and
+                    system-of-systems level.
+
+Cut(i, j, c)        True when node i lies on every supply of condition c to
+                    node j. Operationalised over conditions per node, which is
+                    coarser than 1B's per-operation definition; 3A states this
+                    as a simplification and 1B remains authoritative.
+
+Supply(j, c)        The set of suppliers of condition c to node j, including
+                    j itself when the node-level instance is present.
+
+Both properties are DERIVED from the relation table (decision D3). Neither is
+a parameter and neither has a generative mechanism of its own. Scenario
+generation moves them only through the structural knobs that shape the
+relation table (pool sizes, concentration, external root fraction, CP span).
+
+Deterministic verification in Docker: remove container i, attempt the
+operation on j; failure iff Cut(i, j, c) for some c.
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict
+from dataclasses import dataclass
+from typing import Dict, List, Set, Tuple
+
+from .spec import Condition, Level, RelationClass, ScenarioSpec
+
+
+@dataclass
+class RelationRow:
+    supplier: str
+    receiver: str
+    condition: Condition
+    relation_class: RelationClass
+    level: Level
+    conferral: bool
+    group: str | None
+
+
+class RelationTable:
+    def __init__(self, spec: ScenarioSpec):
+        self.spec = spec
+        self.rows: List[RelationRow] = [
+            RelationRow(r.supplier, r.receiver, r.condition, r.relation_class,
+                        spec.level_of(r), r.conferral, r.group)
+            for r in spec.relations
+        ]
+        # node-level instances: a node supplies its own condition to itself
+        for n in spec.nodes:
+            for cond, present in ((Condition.INTERFACE, n.interface),
+                                  (Condition.EXECUTION_PATHWAY, n.execution_pathway),
+                                  (Condition.AUTHORITY, n.authority)):
+                if present:
+                    self.rows.append(RelationRow(
+                        n.id, n.id, cond, RelationClass.CONNECTION,
+                        Level.NODE, False, None))
+
+    # ---- supply sets ----------------------------------------------------
+    def supply(self, receiver: str, cond: Condition) -> Set[str]:
+        return {r.supplier for r in self.rows
+                if r.receiver == receiver and r.condition == cond}
+
+    def suppliers_by_condition(self, receiver: str) -> Dict[Condition, Set[str]]:
+        return {c: self.supply(receiver, c) for c in Condition}
+
+    # ---- Fan-out --------------------------------------------------------
+    def fan_out(self, supplier: str, relation_class: RelationClass | None = None,
+                level: Level | None = None) -> int:
+        receivers = {
+            r.receiver for r in self.rows
+            if r.supplier == supplier and r.receiver != supplier
+            and (relation_class is None or r.relation_class == relation_class)
+            and (level is None or r.level == level)
+        }
+        return len(receivers)
+
+    def fan_out_table(self) -> Dict[str, Dict[str, int]]:
+        out: Dict[str, Dict[str, int]] = defaultdict(dict)
+        for n in self.spec.nodes:
+            for rc in RelationClass:
+                out[n.id][rc.value] = self.fan_out(n.id, relation_class=rc)
+            out[n.id]["sos"] = self.fan_out(n.id, level=Level.SYSTEM_OF_SYSTEMS)
+            out[n.id]["total"] = self.fan_out(n.id)
+        return dict(out)
+
+    # ---- Cut ------------------------------------------------------------
+    def cut(self, supplier: str, receiver: str, cond: Condition) -> bool:
+        """True iff `supplier` is the only supply of `cond` to `receiver`."""
+        s = self.supply(receiver, cond)
+        return supplier in s and len(s) == 1
+
+    def cut_set(self, receiver: str) -> Dict[Condition, str | None]:
+        """For each condition, the unique supplier if one exists, else None."""
+        out: Dict[Condition, str | None] = {}
+        for c in Condition:
+            s = self.supply(receiver, c)
+            out[c] = next(iter(s)) if len(s) == 1 else None
+        return out
+
+    def cut_table(self) -> List[Tuple[str, str, Condition]]:
+        """All (supplier, receiver, condition) triples where Cut holds and the
+        supplier is a different node (node-level self-supply is excluded, since
+        removing a node trivially removes its own operation)."""
+        triples: List[Tuple[str, str, Condition]] = []
+        for n in self.spec.nodes:
+            for c, sup in self.cut_set(n.id).items():
+                if sup is not None and sup != n.id:
+                    triples.append((sup, n.id, c))
+        return triples
+
+    def cut_count(self, supplier: str) -> int:
+        """Number of (receiver, condition) pairs for which `supplier` is a Cut."""
+        return sum(1 for s, _, _ in self.cut_table() if s == supplier)
+
+    # ---- structural capability (Paper 1A, Eq. 6 necessity direction) ----
+    def structural_capability(self, node_id: str) -> bool:
+        """I ∧ X ∧ A holds for the node given the current supply table."""
+        return all(len(self.supply(node_id, c)) > 0 for c in Condition)
+
+    # ---- summary --------------------------------------------------------
+    def summary(self) -> Dict:
+        levels = defaultdict(int)
+        for r in self.rows:
+            levels[r.level.value] += 1
+        return {
+            "n_rows": len(self.rows),
+            "rows_by_level": dict(levels),
+            "n_cut_triples": len(self.cut_table()),
+            "max_fan_out": max((self.fan_out(n.id) for n in self.spec.nodes),
+                               default=0),
+            "nodes_with_capability": sum(
+                1 for n in self.spec.nodes if self.structural_capability(n.id)),
+        }
