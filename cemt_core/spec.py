@@ -162,6 +162,9 @@ class RateSpec:
     execution_rate: float = 0.55        # P(X holds) for Beta draw at build
     control_variance: float = 0.1
     beta_conn: float = 0.12
+    synchrony: float = 0.5              # fraction of channel members delivered per step
+    dependency_factor: float = 2.0      # base_tp = 1 - 1/(1+dependency_factor)
+    execution_drift_boost: float = 0.8
     control_plane_takeover_rate: float = 0.08
     authority_boost: float = 2.0
     cp_scaling_factor: float = 0.3

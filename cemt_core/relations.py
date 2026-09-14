@@ -94,28 +94,43 @@ class RelationTable:
         s = self.supply(receiver, cond)
         return supplier in s and len(s) == 1
 
-    def cut_set(self, receiver: str) -> Dict[Condition, str | None]:
-        """For each condition, the unique supplier if one exists, else None."""
-        out: Dict[Condition, str | None] = {}
+    def cut_set(self, receiver: str) -> Dict[Condition, Tuple[str, RelationClass] | None]:
+        """For each condition, (unique supplier, relation class) if the supply
+        set has exactly one member, else None."""
+        out: Dict[Condition, Tuple[str, RelationClass] | None] = {}
         for c in Condition:
-            s = self.supply(receiver, c)
-            out[c] = next(iter(s)) if len(s) == 1 else None
+            rows = [r for r in self.rows
+                    if r.receiver == receiver and r.condition == c]
+            suppliers = {r.supplier for r in rows}
+            if len(suppliers) == 1:
+                r0 = rows[0]
+                out[c] = (r0.supplier, r0.relation_class)
+            else:
+                out[c] = None
         return out
 
-    def cut_table(self) -> List[Tuple[str, str, Condition]]:
-        """All (supplier, receiver, condition) triples where Cut holds and the
-        supplier is a different node (node-level self-supply is excluded, since
-        removing a node trivially removes its own operation)."""
-        triples: List[Tuple[str, str, Condition]] = []
+    def cut_table(self) -> List[Tuple[str, str, Condition, RelationClass]]:
+        """All (supplier, receiver, condition, relation_class) where Cut holds
+        and the supplier is a different node. Node-level self-supply is
+        excluded, since removing a node trivially removes its own operation.
+        The relation class is carried so Cut density can be reported per
+        class (Interface-by-adjacency counts, per the Sept 2026 decision)."""
+        out: List[Tuple[str, str, Condition, RelationClass]] = []
         for n in self.spec.nodes:
-            for c, sup in self.cut_set(n.id).items():
-                if sup is not None and sup != n.id:
-                    triples.append((sup, n.id, c))
-        return triples
+            for c, hit in self.cut_set(n.id).items():
+                if hit is not None and hit[0] != n.id:
+                    out.append((hit[0], n.id, c, hit[1]))
+        return out
 
     def cut_count(self, supplier: str) -> int:
         """Number of (receiver, condition) pairs for which `supplier` is a Cut."""
-        return sum(1 for s, _, _ in self.cut_table() if s == supplier)
+        return sum(1 for s, _, _, _ in self.cut_table() if s == supplier)
+
+    def cut_density_by_class(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {rc.value: 0 for rc in RelationClass}
+        for _, _, _, rc in self.cut_table():
+            counts[rc.value] += 1
+        return counts
 
     # ---- structural capability (Paper 1A, Eq. 6 necessity direction) ----
     def structural_capability(self, node_id: str) -> bool:
