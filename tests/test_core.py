@@ -62,6 +62,7 @@ def test_fan_out(micro):
     rt = RelationTable(micro)
     assert rt.fan_out("config-server", relation_class=RelationClass.CONTROL_PLANE) == 3
     assert rt.fan_out("vendor-update") == 2
+    assert rt.fan_out("app-2", relation_class=RelationClass.CONNECTION) == 2  # symmetric
     assert rt.fan_out_table()["vendor-update"]["sos"] == 2
 
 
@@ -69,8 +70,12 @@ def test_cut_golden(micro):
     rt = RelationTable(micro)
     cuts = {(s, r, c.value, k.value) for s, r, c, k in rt.cut_table()}
     assert ("db-1", "app-2", "X", "dependency") in cuts
-    assert len(cuts) == 4
-    assert rt.cut_density_by_class() == {"connection": 3, "channel": 0,
+    # connection adjacency is symmetric, so app-1 and app-2 each have two
+    # Interface suppliers and only config-server (adjacent to web-1 alone)
+    # is an Interface Cut
+    assert ("web-1", "config-server", "I", "connection") in cuts
+    assert len(cuts) == 2
+    assert rt.cut_density_by_class() == {"connection": 1, "channel": 0,
                                          "control_plane": 0, "dependency": 1}
 
 
@@ -172,3 +177,14 @@ def test_generated_spec_is_valid_and_reproducible():
     assert a.validate() == []
     assert len(a.nodes) == len(b.nodes) and len(a.relations) == len(b.relations)
     assert any(n.governance == "vendor" for n in a.nodes)
+
+
+# ------------------------------------------------ docker correspondence ---
+
+def test_local_harness_tier1_set():
+    """Tier 1 protocol against the micro-system service running locally."""
+    from docker_render.local_harness import run_correspondence_set
+    r = run_correspondence_set(MICRO)
+    assert r["all_exact"]
+    cut_rows = [x for x in r["checks"] if x["removed"]]
+    assert cut_rows and all(x["cut_confirmed"] for x in cut_rows)

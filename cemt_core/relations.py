@@ -45,11 +45,18 @@ class RelationRow:
 class RelationTable:
     def __init__(self, spec: ScenarioSpec):
         self.spec = spec
-        self.rows: List[RelationRow] = [
-            RelationRow(r.supplier, r.receiver, r.condition, r.relation_class,
-                        spec.level_of(r), r.conferral, r.group)
-            for r in spec.relations
-        ]
+        self.rows: List[RelationRow] = []
+        for r in spec.relations:
+            self.rows.append(RelationRow(r.supplier, r.receiver, r.condition,
+                                         r.relation_class, spec.level_of(r),
+                                         r.conferral, r.group))
+            # connection relations are symmetric (zone co-membership admits in
+            # both directions); the table must reflect that or Cut will
+            # over-count sole Interface suppliers
+            if r.relation_class == RelationClass.CONNECTION:
+                self.rows.append(RelationRow(r.receiver, r.supplier, r.condition,
+                                             r.relation_class, spec.level_of(r),
+                                             r.conferral, r.group))
         # node-level instances: a node supplies its own condition to itself
         for n in spec.nodes:
             for cond, present in ((Condition.INTERFACE, n.interface),

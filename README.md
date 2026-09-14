@@ -30,7 +30,14 @@ cemt_core/
   benchmarks.py   (next) B1 to B6 and stage mini-tests, moved and re-pointed
 scenarios/
   micro_01_supply_chain.yaml   eight-node correspondence scenario
-docker_render/    (separate package, next) spec -> compose + probes
+tests/
+  test_core.py    18 tests incl. golden micro_01 trace and tier 1 harness
+docker_render/
+  node_service.py identical per-container service (stdlib only)
+  render.py       spec -> compose.yaml, Dockerfile, bundle
+  probe.py        drives rounds, observes, compares with the model
+  local_harness.py  same service as local processes; --set runs tier 1
+  README.md       Docker Desktop workflow
 ```
 
 Per-paper analysis (formula screen, DeLong, Stage 2 thresholds, evidence
