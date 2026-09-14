@@ -1,0 +1,207 @@
+id: c18_micro_01_mixed
+spec_version: '0.1'
+description: 'Eight-node micro-system. A vendor update server (external governance)
+  supplies Execution Pathway to two hosts through a channel; a config server supplies
+  Authority to three hosts through a control plane; a database is a dependency of
+  two application hosts and is the sole supplier of X to app-2 (a Cut). Structural
+  correspondence scenario: deterministic mode.
+
+  '
+governance:
+- id: estate
+  defender_controlled: true
+- id: vendor
+  defender_controlled: false
+nodes:
+- id: vendor-update
+  governance: vendor
+  interface: true
+  execution_pathway: true
+  authority: true
+  state_object: update_feed
+  visible: false
+  impact: 1.0
+  zones: []
+- id: config-server
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: policy_store
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: web-1
+  governance: estate
+  interface: true
+  execution_pathway: true
+  authority: true
+  state_object: web_content
+  visible: true
+  impact: 1.0
+  zones:
+  - 0
+  - 1
+- id: web-2
+  governance: estate
+  interface: true
+  execution_pathway: true
+  authority: true
+  state_object: web_content
+  visible: true
+  impact: 1.0
+  zones:
+  - 0
+  - 2
+- id: app-1
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: orders
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: app-2
+  governance: estate
+  interface: false
+  execution_pathway: false
+  authority: true
+  state_object: orders
+  visible: true
+  impact: 1.0
+  zones:
+  - 2
+- id: db-1
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+  - 2
+- id: host-3
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: files
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+relations:
+- supplier: web-1
+  receiver: app-1
+  condition: I
+  relation_class: connection
+  conferral: false
+  group: null
+- supplier: web-2
+  receiver: app-2
+  condition: I
+  relation_class: connection
+  conferral: false
+  group: null
+- supplier: web-1
+  receiver: config-server
+  condition: I
+  relation_class: connection
+  conferral: false
+  group: null
+- supplier: app-1
+  receiver: db-1
+  condition: I
+  relation_class: connection
+  conferral: false
+  group: null
+- supplier: app-2
+  receiver: db-1
+  condition: I
+  relation_class: connection
+  conferral: false
+  group: null
+- supplier: vendor-update
+  receiver: web-1
+  condition: X
+  relation_class: channel
+  conferral: true
+  group: ch-vendor
+- supplier: vendor-update
+  receiver: web-2
+  condition: X
+  relation_class: channel
+  conferral: true
+  group: ch-vendor
+- supplier: config-server
+  receiver: app-1
+  condition: A
+  relation_class: control_plane
+  conferral: true
+  group: cp-main
+- supplier: config-server
+  receiver: host-3
+  condition: A
+  relation_class: control_plane
+  conferral: true
+  group: cp-main
+- supplier: config-server
+  receiver: db-1
+  condition: A
+  relation_class: control_plane
+  conferral: true
+  group: cp-main
+- supplier: db-1
+  receiver: app-1
+  condition: X
+  relation_class: dependency
+  conferral: false
+  group: null
+- supplier: db-1
+  receiver: app-2
+  condition: X
+  relation_class: dependency
+  conferral: false
+  group: null
+entry_node: web-1
+deterministic: true
+ablation:
+  structure: true
+  time: true
+  adaptation: true
+time:
+  latency_steps: 2
+  drift_increment: 0.08
+  exfil_dwell_steps: 5
+  max_steps: 30
+adaptation:
+  remediation_capability: 0.9
+  overwhelm_coefficient: 4.0
+  synchrony: 0.5
+  tau_a: 0.3
+  sigma_x: 0.05
+  sigma_d: 0.03
+  sigma_r: 0.5
+  actions_allowed:
+  - remediate
+rates:
+  threat_capability: 1.0
+  authority_rate: 0.55
+  execution_rate: 0.55
+  control_variance: 0.1
+  beta_conn: 0.12
+  synchrony: 0.5
+  dependency_factor: 2.0
+  execution_drift_boost: 0.8
+  control_plane_takeover_rate: 0.08
+  authority_boost: 2.0
+  cp_scaling_factor: 0.3
+  phantom_channel_rate: 0.0
+  phantom_cp_rate: 0.0
+  phantom_dep_rate: 0.0
+seed: 42

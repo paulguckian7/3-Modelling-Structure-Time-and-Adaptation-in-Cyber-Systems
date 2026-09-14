@@ -88,10 +88,19 @@ def _gate(p: float, det: bool, rng: np.random.Generator) -> bool:
 
 
 def structural_capability(net: NetworkState, st: SystemState, j: int) -> bool:
-    """I ∧ X ∧ A for node j from the static supply table. Conferral is
-    handled by the relation-class rules in Layer 2; the static table already
-    records the supply, so capability is a property of structure alone."""
-    return net.capability_static(j)
+    """I ∧ X ∧ A for node j from the standing supply table."""
+    return bool(net.sup_I[j] and net.sup_X[j] and net.sup_A[j])
+
+
+def path_capability(net: NetworkState, j: int, supplies: str) -> bool:
+    """Capability for a delivery through a relation that itself supplies the
+    conditions in `supplies` (e.g. "IX" for a channel): the remaining
+    conditions must be supplied standing, by the node or any relation."""
+    need_I = "I" not in supplies
+    need_X = "X" not in supplies
+    need_A = "A" not in supplies
+    return bool((not need_I or net.sup_I[j]) and (not need_X or net.sup_X[j])
+                and (not need_A or net.sup_A[j]))
 
 
 def x_obs(net: NetworkState, st: SystemState) -> float:
@@ -155,7 +164,7 @@ def layer2_systematic(net: NetworkState, st: SystemState,
     A = net.access[RelationClass.CONNECTION]
     exposure = (A.T @ comp.astype(float))
     for j in np.flatnonzero((exposure > 0) & healthy):
-        if not structural_capability(net, st, j):
+        if not path_capability(net, j, "I"):
             continue
         k = int(exposure[j])
         p_per = r.beta_conn * net.x_prob[j] * st.exec_modifier[j] * net.a_prob[j] * T
@@ -167,7 +176,7 @@ def layer2_systematic(net: NetworkState, st: SystemState,
         if not comp[root]:
             continue
         for j in members:
-            if not healthy[j] or not structural_capability(net, st, j):
+            if not healthy[j] or not path_capability(net, j, "IX"):
                 continue
             p = 1.0 if det else r.synchrony * net.a_prob[j] * T
             _accumulate(j, p, "channel")
@@ -177,7 +186,7 @@ def layer2_systematic(net: NetworkState, st: SystemState,
         if not st.owned_cp.get(g, False):
             continue
         for j in members:
-            if not healthy[j] or not structural_capability(net, st, j):
+            if not healthy[j] or not path_capability(net, j, "IA"):
                 continue
             p = 1.0 if det else (r.beta_conn * min(1.0, r.authority_boost)
                                  * net.x_prob[j] * st.exec_modifier[j] * T)

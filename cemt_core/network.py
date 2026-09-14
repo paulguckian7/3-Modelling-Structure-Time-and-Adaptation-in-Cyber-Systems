@@ -60,6 +60,10 @@ class NetworkState:
     # M[i, j] True when supplier i supplies receiver j through that class
     access: Dict[RelationClass, np.ndarray]
     conferral: np.ndarray                # bool [i, j], supplier compromise confers
+    # standing supply of each condition from the relation table (any supplier)
+    sup_I: np.ndarray = None
+    sup_X: np.ndarray = None
+    sup_A: np.ndarray = None
     # control-plane groups: group id -> (controller index, member indices)
     control_planes: Dict[str, tuple] = field(default_factory=dict)
     channels: Dict[str, tuple] = field(default_factory=dict)
@@ -120,8 +124,12 @@ def build_network(spec: ScenarioSpec, rng: np.random.Generator) -> NetworkState:
     for g, m in ch_members.items():
         channels[g] = (ch_root[g], np.array(sorted(set(m))))
 
+    sup = {c: np.array([len(table.supply(nid, c)) > 0 for nid in ids]) for c in Condition}
+
     return NetworkState(
         spec=spec, table=table, ids=ids, index=index, N=N,
+        sup_I=sup[Condition.INTERFACE], sup_X=sup[Condition.EXECUTION_PATHWAY],
+        sup_A=sup[Condition.AUTHORITY],
         external=external, interface=interface,
         x_present=x_present, a_present=a_present,
         x_prob=x_prob, a_prob=a_prob, visible=visible, impact=impact,

@@ -62,9 +62,20 @@ packs) stays out of this package by design.
 
 Tier 1, structural, exact. Each scenario is run with `deterministic: true` in
 both worlds. Agreement is on: the set of nodes reached, the conferral order,
-and every Cut triple confirmed by container removal. Pre-registered set of 15
-to 20 scenarios including negative controls (a condition absent by design;
-`host-3` in `micro_01` has no Interface supply and is such a control).
+and every Cut triple confirmed by container removal. The pre-registered set
+is `scenarios/tier1/` (20 scenarios, built by `scenarios/build_tier1_set.py`,
+expectations in `manifest.yaml`, run by `python -m docker_render.tier1_set`).
+Negative controls are c02 to c05 and c16: a condition or relation absent by
+design.
+
+Supply semantics fixed by the set (Sept 2026):
+* every relation row is a standing supply; compromise of the supplier
+  additionally confers attacker access (conferral)
+* connection supplies I; channel supplies I and X; control plane supplies
+  I and A; dependency supplies X and propagates failure. Channel and plane
+  membership are admission relations (1A, CrowdStrike: the channel is the
+  Interface), so a plane member with no other relation is still reachable
+  through its plane.
 
 Tier 2, temporal, ordinal. With `latency_steps` and a remediation agent, event
 order and observation lag must agree ordinally. No magnitudes.

@@ -57,6 +57,15 @@ class RelationTable:
                 self.rows.append(RelationRow(r.receiver, r.supplier, r.condition,
                                              r.relation_class, spec.level_of(r),
                                              r.conferral, r.group))
+            # a channel or control-plane membership is itself an admission
+            # relation (the member accepts what the root or controller sends),
+            # so it supplies Interface in addition to its named condition
+            # (Paper 1A, CrowdStrike: the vendor channel IS the Interface)
+            if r.relation_class in (RelationClass.CHANNEL, RelationClass.CONTROL_PLANE) \
+                    and r.condition != Condition.INTERFACE:
+                self.rows.append(RelationRow(r.supplier, r.receiver, Condition.INTERFACE,
+                                             r.relation_class, spec.level_of(r),
+                                             r.conferral, r.group))
         # node-level instances: a node supplies its own condition to itself
         for n in spec.nodes:
             for cond, present in ((Condition.INTERFACE, n.interface),

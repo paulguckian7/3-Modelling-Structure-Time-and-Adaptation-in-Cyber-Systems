@@ -1,0 +1,90 @@
+id: c05_no_authority
+spec_version: '0.1'
+description: Adjacent node lacks Authority and has no A supplier.
+governance:
+- id: estate
+  defender_controlled: true
+- id: vendor
+  defender_controlled: false
+nodes:
+- id: a
+  governance: estate
+  interface: true
+  execution_pathway: true
+  authority: true
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones:
+  - 0
+  - 1
+- id: b
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: false
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: c
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+relations:
+- supplier: a
+  receiver: b
+  condition: I
+  relation_class: connection
+  conferral: false
+  group: null
+- supplier: a
+  receiver: c
+  condition: I
+  relation_class: connection
+  conferral: false
+  group: null
+entry_node: a
+deterministic: true
+ablation:
+  structure: true
+  time: true
+  adaptation: true
+time:
+  latency_steps: 2
+  drift_increment: 0.08
+  exfil_dwell_steps: 5
+  max_steps: 20
+adaptation:
+  remediation_capability: 0.9
+  overwhelm_coefficient: 4.0
+  synchrony: 0.5
+  tau_a: 0.3
+  sigma_x: 0.05
+  sigma_d: 0.03
+  sigma_r: 0.5
+  actions_allowed:
+  - remediate
+rates:
+  threat_capability: 1.0
+  authority_rate: 0.55
+  execution_rate: 0.55
+  control_variance: 0.1
+  beta_conn: 0.12
+  synchrony: 0.5
+  dependency_factor: 2.0
+  execution_drift_boost: 0.8
+  control_plane_takeover_rate: 0.08
+  authority_boost: 2.0
+  cp_scaling_factor: 0.3
+  phantom_channel_rate: 0.0
+  phantom_cp_rate: 0.0
+  phantom_dep_rate: 0.0
+seed: 42

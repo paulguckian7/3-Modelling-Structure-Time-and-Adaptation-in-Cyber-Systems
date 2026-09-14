@@ -130,7 +130,7 @@ def supplier_alive(node_id):
 def has_i():
     """I for system-level delivery: the node-level flag or any admission
     relation (a zone peer). Node-level INTERFACE alone gates external entry."""
-    return INTERFACE or bool(CONN_PEERS)
+    return INTERFACE or bool(CONN_PEERS) or bool(CHANNEL_MEMBER_TOKENS) or bool(CP_MEMBER_TOKENS)
 
 
 def has_x(delivery_confers_x):

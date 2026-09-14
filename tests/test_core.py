@@ -74,15 +74,22 @@ def test_cut_golden(micro):
     # Interface suppliers and only config-server (adjacent to web-1 alone)
     # is an Interface Cut
     assert ("web-1", "config-server", "I", "connection") in cuts
-    assert len(cuts) == 2
+    # host-3's only admission is its plane membership (Sept 2026 decision:
+    # channel and control-plane membership supply Interface)
+    assert ("config-server", "host-3", "I", "control_plane") in cuts
+    assert len(cuts) == 3
     assert rt.cut_density_by_class() == {"connection": 1, "channel": 0,
-                                         "control_plane": 0, "dependency": 1}
+                                         "control_plane": 1, "dependency": 1}
 
 
 def test_negative_control_lacks_capability(micro):
     rt = RelationTable(micro)
-    assert rt.structural_capability("host-3") is False
+    assert rt.structural_capability("host-3") is True     # admitted via plane
     assert rt.structural_capability("app-2") is True
+    # a node with no relations and no Interface has no capability
+    island = Node(id="island", governance="estate")
+    spec2 = dataclasses.replace(micro, nodes=micro.nodes + [island])
+    assert RelationTable(spec2).structural_capability("island") is False
 
 
 def test_cut_is_derived_not_parameter(micro):
@@ -97,17 +104,16 @@ def test_cut_is_derived_not_parameter(micro):
 # ---------------------------------------------------------- determinism ---
 
 GOLDEN_REACHED = [(0, "web-1"), (1, "config-server"), (1, "app-1"),
-                  (2, "db-1"), (3, "app-2"), (4, "web-2")]
+                  (2, "db-1"), (3, "app-2"), (3, "host-3"), (4, "web-2")]
 GOLDEN_PLANES = [(2, "cp-main", "controller")]
 
 
 def test_micro_deterministic_trace(micro):
     r = run_scenario(micro)[0]
-    assert [(s, n) for s, n, _ in r["reached"]] == GOLDEN_REACHED
+    assert sorted((s, n) for s, n, _ in r["reached"]) == sorted(GOLDEN_REACHED)
     assert r["planes_owned"] == GOLDEN_PLANES
     assert set(r["reached_set"]) == {n for _, n in GOLDEN_REACHED}
-    assert "host-3" not in r["reached_set"]
-    assert "vendor-update" not in r["reached_set"]
+    assert "vendor-update" not in r["reached_set"]   # external, never forced
 
 
 def test_deterministic_is_seed_invariant(micro):
@@ -188,3 +194,12 @@ def test_local_harness_tier1_set():
     assert r["all_exact"]
     cut_rows = [x for x in r["checks"] if x["removed"]]
     assert cut_rows and all(x["cut_confirmed"] for x in cut_rows)
+
+
+def test_tier1_set_passes():
+    """The full pre-registered tier 1 set: exact two-world agreement, theory
+    expectations satisfied in both worlds, and every Cut confirmed by removal."""
+    from docker_render.tier1_set import run_set
+    rows = run_set()
+    failing = [r["scenario"] for r in rows if not r["pass"]]
+    assert not failing, failing

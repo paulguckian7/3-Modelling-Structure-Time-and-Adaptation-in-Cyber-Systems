@@ -1,0 +1,250 @@
+c01_connection_chain:
+  file: c01_connection_chain.yaml
+  claim: 1B system-level Interface supplied by connection; Paper 2 one step per hop
+  must_reach:
+  - a
+  - b
+  - c
+  - d
+  must_not_reach: []
+  reach_step:
+    b: 1
+    c: 2
+    d: 3
+  cut_removals: {}
+c02_zone_isolation:
+  file: c02_zone_isolation.yaml
+  claim: 'negative control: absent Interface relation blocks reach'
+  must_reach:
+  - a
+  - b
+  must_not_reach:
+  - c
+  - d
+  reach_step: {}
+  cut_removals: {}
+c03_no_interface:
+  file: c03_no_interface.yaml
+  claim: 'negative control: 1A Interface necessary'
+  must_reach:
+  - a
+  - b
+  must_not_reach:
+  - island
+  reach_step: {}
+  cut_removals: {}
+c04_no_execution_pathway:
+  file: c04_no_execution_pathway.yaml
+  claim: 'negative control: 1A Execution Pathway necessary'
+  must_reach:
+  - a
+  - c
+  must_not_reach:
+  - b
+  reach_step: {}
+  cut_removals: {}
+c05_no_authority:
+  file: c05_no_authority.yaml
+  claim: 'negative control: 1A Authority necessary'
+  must_reach:
+  - a
+  - c
+  must_not_reach:
+  - b
+  reach_step: {}
+  cut_removals: {}
+c06_channel_delivery:
+  file: c06_channel_delivery.yaml
+  claim: 1B system-of-systems relation; channel bypasses node Interface
+  must_reach:
+  - m1
+  - m2
+  must_not_reach:
+  - other
+  reach_step:
+    m1: 1
+    m2: 1
+  cut_removals: {}
+c07_channel_confers_x:
+  file: c07_channel_confers_x.yaml
+  claim: '1B conferral: a relation supplies a condition the node lacks'
+  must_reach:
+  - m1
+  - peer
+  must_not_reach: []
+  reach_step:
+    m1: 1
+    peer: 2
+  cut_removals: {}
+c08_control_plane_conferral:
+  file: c08_control_plane_conferral.yaml
+  claim: 1B Authority conferred through control plane; plane membership is itself
+    admission
+  must_reach:
+  - ctl
+  - m1
+  - m2
+  - m_planeonly
+  must_not_reach: []
+  reach_step:
+    ctl: 1
+    m1: 3
+    m2: 3
+    m_planeonly: 3
+  cut_removals: {}
+c09_cp_timing:
+  file: c09_cp_timing.yaml
+  claim: 'Paper 2 Time: one-step detection window at each stage'
+  must_reach:
+  - ctl
+  - m
+  must_not_reach: []
+  reach_step:
+    ctl: 1
+    m: 3
+  cut_removals: {}
+c10_dependency_cascade:
+  file: c10_dependency_cascade.yaml
+  claim: 1B dependency relation supplies X; failure propagates without admission
+  must_reach:
+  - d1
+  - d2
+  - up
+  must_not_reach: []
+  reach_step:
+    up: 1
+    d1: 2
+    d2: 3
+  cut_removals: {}
+c11_dependency_cut:
+  file: c11_dependency_cut.yaml
+  claim: '1B Cut on dependency: removing the sole X supplier makes r unreachable'
+  must_reach:
+  - r
+  - up
+  must_not_reach: []
+  reach_step: {}
+  cut_removals:
+    up:
+    - r
+c12_connection_cut:
+  file: c12_connection_cut.yaml
+  claim: '1B Cut on connection: sole admitting neighbour'
+  must_reach:
+  - mid
+  - r
+  must_not_reach: []
+  reach_step: {}
+  cut_removals:
+    mid:
+    - r
+c13_cp_cut:
+  file: c13_cp_cut.yaml
+  claim: '1B Cut on control plane: removing the controller removes A'
+  must_reach:
+  - ctl
+  - m
+  must_not_reach: []
+  reach_step: {}
+  cut_removals:
+    ctl:
+    - m
+c14_channel_cut:
+  file: c14_channel_cut.yaml
+  claim: '1B Cut on channel: a healthy root supplies X standing; removing it makes
+    m unreachable'
+  must_reach:
+  - m
+  - peer
+  must_not_reach: []
+  reach_step:
+    m: 1
+  cut_removals:
+    vendor:
+    - m
+c15_fanout:
+  file: c15_fanout.yaml
+  claim: '1B Fan-out: one supplier, six receivers, single step'
+  must_reach:
+  - l0
+  - l1
+  - l2
+  - l3
+  - l4
+  - l5
+  must_not_reach: []
+  reach_step:
+    l0: 1
+    l1: 1
+    l2: 1
+    l3: 1
+    l4: 1
+    l5: 1
+  cut_removals: {}
+c16_boundary_not_crossed:
+  file: c16_boundary_not_crossed.yaml
+  claim: 'negative control: system-of-systems relation runs vendor to estate only'
+  must_reach:
+  - b
+  must_not_reach:
+  - m
+  - vendor
+  reach_step: {}
+  cut_removals: {}
+c17_two_planes:
+  file: c17_two_planes.yaml
+  claim: conferral chains across planes with the detection window at each stage
+  must_reach:
+  - c1
+  - c2
+  - m2
+  - s
+  must_not_reach: []
+  reach_step:
+    c1: 1
+    s: 3
+    c2: 4
+    m2: 6
+  cut_removals: {}
+c18_micro_01_mixed:
+  file: c18_micro_01_mixed.yaml
+  claim: all relation classes together
+  must_reach:
+  - app-1
+  - app-2
+  - config-server
+  - db-1
+  - host-3
+  - web-1
+  - web-2
+  must_not_reach:
+  - vendor-update
+  reach_step:
+    host-3: 3
+  cut_removals:
+    db-1:
+    - app-2
+    config-server:
+    - host-3
+c19_cycle:
+  file: c19_cycle.yaml
+  claim: termination under cyclic structure
+  must_reach:
+  - b
+  - c
+  must_not_reach: []
+  reach_step: {}
+  cut_removals: {}
+c20_static_x_supply:
+  file: c20_static_x_supply.yaml
+  claim: '1B: a relation supplies a condition without the supplier being compromised;
+    Cut still holds'
+  must_reach:
+  - r
+  must_not_reach:
+  - up
+  reach_step:
+    r: 1
+  cut_removals:
+    up:
+    - r

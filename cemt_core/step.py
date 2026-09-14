@@ -106,7 +106,8 @@ def run_one_trial(net: NetworkState, rng: np.random.Generator,
     xs = st.audit["x_true"]
     t_collapse = classify_collapse(xs)
     est = ~net.external
-    reached_mask = np.isin(st.compromise, [1, 2, 3]) & est
+    reached_mask = np.isin(st.compromise, [1, 2, 3])          # all nodes
+    impact_mask = reached_mask & est                          # estate only
     return {
         "entry": net.ids[entry],
         "reached": list(st.audit["reached"]),          # (step, node, via)
@@ -114,7 +115,7 @@ def run_one_trial(net: NetworkState, rng: np.random.Generator,
         "planes_owned": list(st.audit["planes_owned"]),
         "x_true_final": xs[-1] if xs else 0.0,
         "x_true_max": max(xs) if xs else 0.0,
-        "impact_true": float(net.impact[reached_mask].sum()),
+        "impact_true": float(net.impact[impact_mask].sum()),
         "t_collapse": t_collapse,
         "collapsed": t_collapse >= 0,
         "n_steps": len(xs),

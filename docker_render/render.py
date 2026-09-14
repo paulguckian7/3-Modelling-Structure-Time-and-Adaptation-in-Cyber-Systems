@@ -52,7 +52,7 @@ def node_envs(spec: ScenarioSpec, addrs: Dict[str, str] | None = None) -> Dict[s
             ch_root[g] = r.supplier
             ch_members[g].append(r.receiver)
             if r.condition == Condition.EXECUTION_PATHWAY:
-                pass  # X conferred at delivery, not static
+                x_sup[r.receiver].add(r.supplier)     # standing X supply
         elif r.relation_class == RelationClass.CONTROL_PLANE:
             g = r.group or f"cp-{r.supplier}"
             cp_ctl[g] = r.supplier
