@@ -1,9 +1,9 @@
 {
-  "core_version": "0.6-skeleton",
-  "run_at": "2026-09-16T16:51:52+00:00",
+  "core_version": "0.7",
+  "run_at": "2026-09-16T17:06:56+00:00",
   "mode": "local_harness",
-  "frozen_set_digest": "5f93ed75f59a1e118e8051e96a9eaabe6bbcee4989ad7400b8c53809c2e8fe2d",
-  "pre_registered": true,
+  "frozen_set_digest": null,
+  "pre_registered": false,
   "n_pass": 20,
   "n": 20,
   "rows": [
@@ -65,7 +65,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.3
+      "secs": 0.4
     },
     {
       "scenario": "c06_directing_external_trust",
@@ -77,7 +77,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.4
+      "secs": 0.7
     },
     {
       "scenario": "c07_directing_needs_local_x",
@@ -89,7 +89,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.3
+      "secs": 0.4
     },
     {
       "scenario": "c08_conferring_control_plane",

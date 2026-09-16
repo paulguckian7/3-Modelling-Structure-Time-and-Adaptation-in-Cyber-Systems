@@ -30,8 +30,8 @@ ROOT = os.path.dirname(HERE)
 FROZEN_DIRS = ["cemt_core", os.path.join("scenarios", "tier1")]
 FROZEN_FILES = [os.path.join("docker_render", f) for f in
                 ("node_service.py", "probe.py", "render.py")]
-EXCLUDE = {"__pycache__", "tier1_results.csv", "tier1_results.md",
-           "tier1_results.tex", "tier1_run_record.json"}
+EXCLUDE = {"__pycache__", ".vs", ".vscode", ".git", "tier1_results.csv",
+           "tier1_results.md", "tier1_results.tex", "tier1_run_record.json"}
 
 
 def _sha(path: str) -> str:

@@ -103,7 +103,11 @@ class DefenderActionKind(str, Enum):
     Container-level operations the Docker renderer can execute. Included now
     so 4A/4B/5 scenarios remain renderable; 3A exercises only REMEDIATE.
     """
-    REMEDIATE = "remediate"        # restore a node to healthy
+    REMEDIATE = "remediate"        # restore a node to healthy (dynamic part of S)
+    REVOKE_TRUST = "revoke_trust"  # withdraw admission configured for a directing
+                                   # controller whose members are observed
+                                   # compromised (IAE status change: the plane no
+                                   # longer supplies I or directs A)
     ISOLATE = "isolate"            # sever a node's relations
     RESET_CONTROL_PLANE = "reset_control_plane"
     RESTORE_VISIBILITY = "restore_visibility"
@@ -166,10 +170,14 @@ class Relation:
 
 @dataclass
 class TimeSpec:
-    latency_steps: int = 2
+    latency_steps: int = 2            # steps before a compromised visible node is observed
     drift_increment: float = 0.08
     exfil_dwell_steps: int = 5
     max_steps: int = 50
+    # rollout schedule per directing plane: group -> {"canary": [ids], "interval": k}
+    # canary members are pushed from the first push step; the rest from
+    # interval steps later. With Time ablated the interval is treated as 0.
+    rollout: Dict[str, Dict] = field(default_factory=dict)
 
 
 @dataclass
@@ -181,6 +189,9 @@ class AdaptationSpec:
     sigma_x: float = 0.05
     sigma_d: float = 0.03
     sigma_r: float = 0.5
+    # fixed policy threshold theta_d: remediation acts only while the observed
+    # compromise fraction exceeds it. 0.0 = act on any observation.
+    threshold: float = 0.0
     actions_allowed: List[DefenderActionKind] = field(
         default_factory=lambda: [DefenderActionKind.REMEDIATE])
 
@@ -238,6 +249,8 @@ class ScenarioSpec:
     nodes: List[Node] = field(default_factory=list)
     relations: List[Relation] = field(default_factory=list)
     entry_node: Optional[str] = None     # None = policy-sampled in the model
+    entry_certain: bool = False          # Layer 1 passes at the entry node: the
+                                         # disturbance is the premise, not sampled
     deterministic: bool = False          # structural correspondence mode
     ablation: AblationSpec = field(default_factory=AblationSpec)
     time: TimeSpec = field(default_factory=TimeSpec)
@@ -330,6 +343,7 @@ def spec_from_dict(raw: Dict) -> ScenarioSpec:
             ) for r in raw.get("relations", [])
         ],
         entry_node=raw.get("entry_node"),
+        entry_certain=bool(raw.get("entry_certain", False)),
         deterministic=bool(raw.get("deterministic", False)),
         ablation=AblationSpec(**raw.get("ablation", {})),
         time=TimeSpec(**raw.get("time", {})),

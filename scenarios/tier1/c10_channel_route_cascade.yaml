@@ -66,6 +66,7 @@ relations:
   conferral: false
   group: null
 entry_node: a
+entry_certain: false
 deterministic: true
 ablation:
   structure: true
@@ -76,6 +77,7 @@ time:
   drift_increment: 0.08
   exfil_dwell_steps: 5
   max_steps: 20
+  rollout: {}
 adaptation:
   remediation_capability: 0.9
   overwhelm_coefficient: 4.0
@@ -84,6 +86,7 @@ adaptation:
   sigma_x: 0.05
   sigma_d: 0.03
   sigma_r: 0.5
+  threshold: 0.0
   actions_allowed:
   - remediate
 rates:

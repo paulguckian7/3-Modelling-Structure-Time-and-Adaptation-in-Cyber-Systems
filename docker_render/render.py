@@ -128,7 +128,7 @@ def compose_dict(spec: ScenarioSpec) -> Dict:
 
 DOCKERFILE = """FROM python:3.12-slim
 WORKDIR /app
-RUN pip install --no-cache-dir pyyaml
+RUN pip install --no-cache-dir pyyaml numpy
 COPY node_service.py probe.py spec.yaml ./
 COPY cemt_core ./cemt_core
 CMD ["python", "node_service.py"]
@@ -148,8 +148,10 @@ def write_bundle(spec: ScenarioSpec, out_dir: str, cemt_core_dir: str | None = N
     src = cemt_core_dir or os.path.join(os.path.dirname(HERE), "cemt_core")
     dst = os.path.join(out_dir, "cemt_core")
     if os.path.exists(dst):
-        shutil.rmtree(dst)
-    shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.rmtree(dst, ignore_errors=True)
+    shutil.copytree(src, dst, dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns("__pycache__", ".vs", ".vscode",
+                                                  ".git", "*.pyc"))
     return out_dir
 
 

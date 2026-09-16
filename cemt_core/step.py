@@ -104,8 +104,17 @@ def run_one_trial(net: NetworkState, rng: np.random.Generator,
             break
 
     xs = st.audit["x_true"]
+    xo = st.audit["x_obs"]
     t_collapse = classify_collapse(xs)
+    # Time outcome: step of first observation, and fraction reached by then
+    first_obs = next((i + 1 for i, v in enumerate(xo) if v > 0), -1)
     est = ~net.external
+    if first_obs > 0:
+        reached_by_then = sum(1 for s_, n_, _ in st.audit["reached"]
+                              if s_ <= first_obs and not net.external[net.index[n_]])
+        frac_before_obs = reached_by_then / max(int(est.sum()), 1)
+    else:
+        frac_before_obs = float(np.isin(st.compromise, [1, 2, 3])[est].mean())
     reached_mask = np.isin(st.compromise, [1, 2, 3])          # all nodes
     impact_mask = reached_mask & est                          # estate only
     return {
@@ -117,6 +126,12 @@ def run_one_trial(net: NetworkState, rng: np.random.Generator,
         "x_true_max": max(xs) if xs else 0.0,
         "impact_true": float(net.impact[impact_mask].sum()),
         "t_collapse": t_collapse,
+        "first_observed_step": first_obs,
+        "frac_reached_before_observation": frac_before_obs,
+        "n_remediations": len(st.audit.get("remediations", [])),
+        "revocations": list(st.audit.get("revocations", [])),
+        "first_remediation_step": (st.audit["remediations"][0][0]
+                                   if st.audit.get("remediations") else -1),
         "collapsed": t_collapse >= 0,
         "n_steps": len(xs),
         "ablation": ab.label,

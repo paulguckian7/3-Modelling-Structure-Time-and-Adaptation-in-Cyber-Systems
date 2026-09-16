@@ -106,6 +106,17 @@ print(rt.summary()); print(rt.cut_table())"
 4. Any later structural change requires a declared model revision with a
    new `CORE_VERSION`; parameter and condition changes do not.
 
+## Archetype experiments (Sections V to VIII)
+
+`python -m experiments.archetypes` builds `scenarios/archetypes/*.yaml`, runs
+Experiment 1 (Structure, WannaCry-inspired, deterministic), Experiment 2
+(Time, CrowdStrike-inspired, deterministic with observation latency and a
+rollout schedule) and Experiment 3 (Adaptation, SolarWinds-inspired,
+stochastic, paired seeds, open loop vs remediation-only vs remediation plus
+trust revocation), under $M_{STA}$, $M_{ST}$, $M_{SA}$, $M_S$ and $M_{TA}$,
+and writes `results/archetype_results.md`, `.csv` and `ablation_matrix.tex`
+with the H4/H5 verdict.
+
 ## Freeze and pre-registration
 
 `python -m docker_render.freeze` records SHA-256 hashes of the core package,

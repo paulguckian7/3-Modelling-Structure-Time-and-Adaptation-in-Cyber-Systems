@@ -204,3 +204,39 @@ def test_tier1_set_passes():
     rows = run_set()
     failing = [r["scenario"] for r in rows if not r["pass"]]
     assert not failing, failing
+
+
+# ------------------------------------------------------------ v0.7 mechanics ---
+
+def test_rollout_schedule_and_time_ablation():
+    from experiments.archetypes import exp2_specs
+    t1, t2 = exp2_specs(interval=4)["T1_immediate"], exp2_specs(interval=4)["T2_staged"]
+    r1, r2 = run_scenario(t1)[0], run_scenario(t2)[0]
+    assert r1["frac_reached_before_observation"] == 1.0
+    assert r2["frac_reached_before_observation"] < r1["frac_reached_before_observation"]
+    # with Time ablated the interval collapses and the contrast disappears
+    sa = dataclasses.replace(t2, ablation=AblationSpec(time=False))
+    assert run_scenario(sa)[0]["frac_reached_before_observation"] == 1.0
+
+
+def test_revoke_trust_changes_outcome_and_remediation_alone_does_not():
+    from experiments.archetypes import exp3_specs
+    sp = exp3_specs()
+    ext = {}
+    for k in ("open_loop", "closed_remediate_only", "closed_loop"):
+        rs = [run_scenario(sp[k], seed=100 + i)[0] for i in range(10)]
+        ext[k] = np.mean([len(r["reached_set"]) for r in rs])
+    assert abs(ext["closed_remediate_only"] - ext["open_loop"]) < 1.5
+    assert ext["closed_loop"] < ext["open_loop"] - 2
+
+
+def test_entry_certain_makes_disturbance_the_premise():
+    from experiments.archetypes import exp3_specs
+    s = exp3_specs()["open_loop"]
+    assert all(run_scenario(s, seed=i)[0]["reached_set"] for i in range(20))
+
+
+def test_ablation_matrix_h4_h5():
+    from experiments.archetypes import run_exp1, run_exp2
+    assert run_exp1("STA")["signature"] and not run_exp1("TA")["signature"]
+    assert run_exp2("STA")["signature"] and not run_exp2("SA")["signature"]

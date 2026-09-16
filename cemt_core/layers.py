@@ -32,7 +32,7 @@ from typing import Dict, List, Optional
 import numpy as np
 
 from .network import NetworkState
-from .spec import RelationClass
+from .spec import DefenderActionKind, RelationClass
 
 
 class NodeState(IntEnum):
@@ -48,6 +48,8 @@ class SystemState:
     drift: np.ndarray                      # float per node
     compromised_at: np.ndarray             # int, -1 if never
     owned_cp: Dict[str, bool]              # control-plane group -> owned
+    owned_at: Dict[str, int] = field(default_factory=dict)  # group -> step owned
+    revoked_cp: Dict[str, int] = field(default_factory=dict) # group -> step revoked
     a: float = 1.0                         # adaptive capacity stock
     step: int = 0
     exec_modifier: np.ndarray = None       # drift-adjusted X gate multiplier
@@ -101,10 +103,18 @@ def path_capability(net: NetworkState, j: int, supplies: str) -> bool:
                 and (not need_A or net.sup_A[j]))
 
 
+def observed_mask(net: NetworkState, st: SystemState) -> np.ndarray:
+    """Nodes the defender currently observes as compromised: visible, active,
+    and past the observation latency (Time). With Time ablated, latency is 0."""
+    lat = net.spec.time.latency_steps if net.spec.ablation.time else 0
+    active = np.isin(st.compromise, [NodeState.COMPROMISED, NodeState.EXFILTRATING])
+    aged = (st.compromised_at >= 0) & (st.step - st.compromised_at >= lat)
+    return active & net.visible & ~net.external & aged
+
+
 def x_obs(net: NetworkState, st: SystemState) -> float:
     est = ~net.external
-    active = (st.compromise == NodeState.COMPROMISED) & net.visible & est
-    return float(active.sum() / max(est.sum(), 1))
+    return float(observed_mask(net, st).sum() / max(est.sum(), 1))
 
 
 def x_true(net: NetworkState, st: SystemState) -> float:
@@ -127,7 +137,7 @@ def layer1_entry(net: NetworkState, st: SystemState, entry: int,
         return None                                  # X or A absent
     T = net.spec.rates.threat_capability
     p = net.x_prob[entry] * st.exec_modifier[entry] * net.a_prob[entry] * T
-    if not _gate(p, det, rng):
+    if not _gate(p, det or net.spec.entry_certain, rng):
         return None
     mask = np.zeros(net.N, dtype=bool)
     mask[entry] = True
@@ -188,13 +198,21 @@ def layer2_systematic(net: NetworkState, st: SystemState,
             p = 1.0 if det else min(1.0, base_tp * (1.0 + st.drift[j]) * net.a_prob[j] * T)
             _accumulate(j, p, "channel")
 
-    # directing control plane: owned plane pushes to members
+    # directing control plane: owned plane pushes to members, subject to the
+    # plane's rollout schedule (Time): canary members first, the rest after
+    # the interval; with Time ablated the whole population is pushed at once
     for g, (ctl, members) in net.control_planes.items():
-        if not st.owned_cp.get(g, False):
+        if not st.owned_cp.get(g, False) or g in st.revoked_cp:
             continue
+        sched = net.spec.time.rollout.get(g)
         for j in members:
             if not healthy[j] or not path_capability(net, j, "I"):
                 continue
+            if sched and net.spec.ablation.time:
+                canary = {net.index[c] for c in sched.get("canary", []) if c in net.index}
+                since = st.step - st.owned_at.get(g, st.step)
+                if j not in canary and since < int(sched.get("interval", 0)) + 1:
+                    continue
             p = 1.0 if det else (r.beta_conn * min(1.0, r.authority_boost)
                                  * net.x_prob[j] * st.exec_modifier[j] * net.a_prob[j] * T)
             _accumulate(j, p, "control_plane_directing")
@@ -222,6 +240,7 @@ def layer3_systemic(net: NetworkState, st: SystemState,
             continue
         if comp[ctl]:
             st.owned_cp[g] = True
+            st.owned_at[g] = st.step
             st.audit["planes_owned"].append((st.step, g, "controller"))
             continue
         if det:
@@ -231,6 +250,7 @@ def layer3_systemic(net: NetworkState, st: SystemState,
             continue
         if rng.random() < 1.0 - (1.0 - r.control_plane_takeover_rate) ** k:
             st.owned_cp[g] = True
+            st.owned_at[g] = st.step
             st.audit["planes_owned"].append((st.step, g, "members"))
     return StateDelta(source="layer3")
 
@@ -266,14 +286,25 @@ def layer5_adaptation(net: NetworkState, st: SystemState,
     xo = x_obs(net, st)
     overwhelm = max(0.01, st.a * np.exp(-ad.overwhelm_coefficient * xo))
     n_rem = 0
-    if not det:
-        comp = st.compromise == NodeState.COMPROMISED
-        cand = np.flatnonzero(comp & net.visible & ~net.external)
+    if not det and xo > ad.threshold:          # fixed policy: u(t)=1 iff o(t) > theta_d
+        obs = observed_mask(net, st)
+        # revoke trust: withdraw the admission configured for any directing
+        # controller one of whose members is observed compromised. This is
+        # Gamma acting on the IAE status: the plane ceases to supply I and to
+        # direct A, so an external source can no longer re-deliver.
+        if DefenderActionKind.REVOKE_TRUST in ad.actions_allowed:
+            for g, (ctl, members) in net.control_planes.items():
+                if g not in st.revoked_cp and obs[members].any():
+                    st.revoked_cp[g] = st.step
+                    st.audit.setdefault("revocations", []).append((st.step, g))
+        cand = np.flatnonzero(obs)
         for j in cand:
             if rng.random() < ad.synchrony * ad.remediation_capability * overwhelm:
                 st.compromise[j] = NodeState.HEALTHY
+                st.compromised_at[j] = -1
                 st.drift[j] = max(0.0, st.drift[j] - 0.1)
                 n_rem += 1
+                st.audit.setdefault("remediations", []).append((st.step, net.ids[j]))
     # adaptive capacity stock
     comp = st.compromise == NodeState.COMPROMISED
     d_end = float(st.drift[comp].mean()) if comp.any() else 0.0

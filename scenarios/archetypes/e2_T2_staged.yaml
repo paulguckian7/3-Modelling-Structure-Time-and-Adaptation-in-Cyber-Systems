@@ -1,0 +1,384 @@
+id: e2_T2_staged
+spec_version: '0.1'
+description: canary 2 agents, interval 4
+governance:
+- id: estate
+  defender_controlled: true
+- id: vendor
+  defender_controlled: false
+nodes:
+- id: vendor
+  governance: vendor
+  interface: true
+  execution_pathway: true
+  authority: true
+  state_object: content
+  visible: false
+  impact: 1.0
+  zones: []
+- id: a00
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: a01
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 2
+- id: a02
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 3
+- id: a03
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 4
+- id: a04
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 5
+- id: a05
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 6
+- id: a06
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 7
+- id: a07
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 8
+- id: a08
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 9
+- id: a09
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 10
+- id: a10
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 11
+- id: a11
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 12
+- id: a12
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 13
+- id: a13
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 14
+- id: a14
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 15
+- id: a15
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 16
+- id: a16
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 17
+- id: a17
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 18
+- id: a18
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 19
+- id: a19
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: sensor
+  visible: true
+  impact: 1.0
+  zones:
+  - 20
+relations:
+- supplier: vendor
+  receiver: a00
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a01
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a02
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a03
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a04
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a05
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a06
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a07
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a08
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a09
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a10
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a11
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a12
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a13
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a14
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a15
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a16
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a17
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a18
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: a19
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+entry_node: vendor
+entry_certain: false
+deterministic: true
+ablation:
+  structure: true
+  time: true
+  adaptation: true
+time:
+  latency_steps: 2
+  drift_increment: 0.08
+  exfil_dwell_steps: 5
+  max_steps: 40
+  rollout:
+    upd:
+      canary:
+      - a00
+      - a01
+      interval: 4
+adaptation:
+  remediation_capability: 0.9
+  overwhelm_coefficient: 4.0
+  synchrony: 0.5
+  tau_a: 0.3
+  sigma_x: 0.05
+  sigma_d: 0.03
+  sigma_r: 0.5
+  threshold: 0.0
+  actions_allowed:
+  - remediate
+rates:
+  threat_capability: 1.0
+  authority_rate: 0.8
+  execution_rate: 0.8
+  control_variance: 0.1
+  beta_conn: 0.5
+  synchrony: 0.5
+  dependency_factor: 3.0
+  execution_drift_boost: 0.8
+  control_plane_takeover_rate: 0.0
+  authority_boost: 2.0
+  cp_scaling_factor: 0.3
+  phantom_channel_rate: 0.0
+  phantom_cp_rate: 0.0
+  phantom_dep_rate: 0.0
+seed: 2

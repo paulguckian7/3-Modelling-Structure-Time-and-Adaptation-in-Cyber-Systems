@@ -1,0 +1,6 @@
+model,exp1_S1,exp1_S2,exp1_S3,exp1_S4,exp1_sig,exp2_T1_frac,exp2_T2_frac,exp2_sig,exp3_open_extent,exp3_closed_extent,exp3_median_diff,exp3_sig
+STA,24,8,16,16,True,1.000,0.100,True,1.000,0.484,0.533,True
+ST,24,8,16,16,True,1.000,0.100,True,1.000,1.000,0.000,False
+SA,24,8,16,16,True,1.000,1.000,False,1.000,0.007,1.000,True
+S,24,8,16,16,True,1.000,1.000,False,1.000,1.000,0.000,False
+TA,1,1,1,1,False,0.000,0.000,False,0.000,0.000,0.000,False

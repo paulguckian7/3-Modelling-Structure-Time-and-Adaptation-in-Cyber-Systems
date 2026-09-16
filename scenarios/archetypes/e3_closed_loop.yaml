@@ -1,0 +1,300 @@
+id: e3_closed_loop
+spec_version: '0.1'
+description: remediate and revoke trust when o(t) > 0.02
+governance:
+- id: estate
+  defender_controlled: true
+- id: vendor
+  defender_controlled: false
+nodes:
+- id: vendor
+  governance: vendor
+  interface: true
+  execution_pathway: true
+  authority: true
+  state_object: build
+  visible: false
+  impact: 1.0
+  zones: []
+- id: agent0
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: pipeline
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: svc00
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: svc01
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: svc02
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: svc03
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: agent1
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: pipeline
+  visible: true
+  impact: 1.0
+  zones:
+  - 2
+- id: svc10
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 2
+- id: svc11
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 2
+- id: svc12
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 2
+- id: svc13
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 2
+- id: agent2
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: pipeline
+  visible: true
+  impact: 1.0
+  zones:
+  - 3
+- id: svc20
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 3
+- id: svc21
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 3
+- id: svc22
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 3
+- id: svc23
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: records
+  visible: true
+  impact: 1.0
+  zones:
+  - 3
+relations:
+- supplier: vendor
+  receiver: agent0
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: agent0
+  receiver: svc00
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: agent0
+  receiver: svc01
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: agent0
+  receiver: svc02
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: agent0
+  receiver: svc03
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: vendor
+  receiver: agent1
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: agent1
+  receiver: svc10
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: agent1
+  receiver: svc11
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: agent1
+  receiver: svc12
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: agent1
+  receiver: svc13
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: vendor
+  receiver: agent2
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: agent2
+  receiver: svc20
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: agent2
+  receiver: svc21
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: agent2
+  receiver: svc22
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+- supplier: agent2
+  receiver: svc23
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
+entry_node: vendor
+entry_certain: true
+deterministic: false
+ablation:
+  structure: true
+  time: true
+  adaptation: true
+time:
+  latency_steps: 2
+  drift_increment: 0.08
+  exfil_dwell_steps: 0
+  max_steps: 40
+  rollout: {}
+adaptation:
+  remediation_capability: 0.9
+  overwhelm_coefficient: 4.0
+  synchrony: 0.5
+  tau_a: 0.3
+  sigma_x: 0.05
+  sigma_d: 0.03
+  sigma_r: 0.5
+  threshold: 0.02
+  actions_allowed:
+  - remediate
+  - revoke_trust
+rates:
+  threat_capability: 1.0
+  authority_rate: 0.8
+  execution_rate: 0.8
+  control_variance: 0.1
+  beta_conn: 0.5
+  synchrony: 0.5
+  dependency_factor: 0.35
+  execution_drift_boost: 0.8
+  control_plane_takeover_rate: 0.0
+  authority_boost: 2.0
+  cp_scaling_factor: 0.3
+  phantom_channel_rate: 0.0
+  phantom_cp_rate: 0.0
+  phantom_dep_rate: 0.0
+seed: 3
