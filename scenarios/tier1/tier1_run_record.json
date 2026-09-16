@@ -1,10 +1,10 @@
 {
   "core_version": "0.7",
-  "run_at": "2026-09-16T17:06:56+00:00",
-  "mode": "local_harness",
-  "frozen_set_digest": null,
-  "pre_registered": false,
-  "n_pass": 20,
+  "run_at": "2026-09-16T17:24:01+00:00",
+  "mode": "docker",
+  "frozen_set_digest": "8477d51c0bd25c76fd7cc093f95c02024dfa4d19372acc99ba0bf8b5dfa794bd",
+  "pre_registered": true,
+  "n_pass": 19,
   "n": 20,
   "rows": [
     {
@@ -17,7 +17,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.7
+      "secs": 20.1
     },
     {
       "scenario": "c02_zone_isolation",
@@ -29,7 +29,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.7
+      "secs": 19.1
     },
     {
       "scenario": "c03_no_interface",
@@ -41,7 +41,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.3
+      "secs": 17.3
     },
     {
       "scenario": "c04_no_execution_pathway",
@@ -53,7 +53,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.3
+      "secs": 18.2
     },
     {
       "scenario": "c05_no_authority",
@@ -65,7 +65,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.4
+      "secs": 17.9
     },
     {
       "scenario": "c06_directing_external_trust",
@@ -77,7 +77,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.7
+      "secs": 19.4
     },
     {
       "scenario": "c07_directing_needs_local_x",
@@ -89,7 +89,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.4
+      "secs": 18.0
     },
     {
       "scenario": "c08_conferring_control_plane",
@@ -101,7 +101,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.7
+      "secs": 20.0
     },
     {
       "scenario": "c09_cp_timing",
@@ -113,7 +113,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.4
+      "secs": 18.8
     },
     {
       "scenario": "c10_channel_route_cascade",
@@ -125,7 +125,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.7
+      "secs": 19.1
     },
     {
       "scenario": "c11_channel_cut",
@@ -137,7 +137,7 @@
       "theory_model": "ok",
       "cuts": "-up:ok",
       "pass": true,
-      "secs": 0.7
+      "secs": 52.2
     },
     {
       "scenario": "c12_connection_cut",
@@ -149,7 +149,7 @@
       "theory_model": "ok",
       "cuts": "-mid:ok",
       "pass": true,
-      "secs": 0.7
+      "secs": 53.0
     },
     {
       "scenario": "c13_conferring_cut",
@@ -161,7 +161,7 @@
       "theory_model": "ok",
       "cuts": "-iss:ok",
       "pass": true,
-      "secs": 0.7
+      "secs": 53.2
     },
     {
       "scenario": "c14_directing_cut",
@@ -173,7 +173,7 @@
       "theory_model": "ok",
       "cuts": "-ctl:ok",
       "pass": true,
-      "secs": 0.7
+      "secs": 52.6
     },
     {
       "scenario": "c15_fanout",
@@ -185,7 +185,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.7
+      "secs": 20.6
     },
     {
       "scenario": "c16_boundary_not_crossed",
@@ -197,7 +197,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.7
+      "secs": 20.0
     },
     {
       "scenario": "c17_two_planes",
@@ -209,7 +209,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.7
+      "secs": 21.2
     },
     {
       "scenario": "c18_micro_01_mixed",
@@ -219,9 +219,9 @@
       "exact": true,
       "theory_obs": "ok",
       "theory_model": "ok",
-      "cuts": "-db-1:ok -config-server:ok",
-      "pass": true,
-      "secs": 2.3
+      "cuts": "-db-1:FAIL -config-server:ok",
+      "pass": false,
+      "secs": 118.5
     },
     {
       "scenario": "c19_cycle",
@@ -233,7 +233,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.4
+      "secs": 20.6
     },
     {
       "scenario": "c20_static_x_supply",
@@ -245,7 +245,7 @@
       "theory_model": "ok",
       "cuts": "-up:ok",
       "pass": true,
-      "secs": 0.7
+      "secs": 51.1
     }
   ]
 }

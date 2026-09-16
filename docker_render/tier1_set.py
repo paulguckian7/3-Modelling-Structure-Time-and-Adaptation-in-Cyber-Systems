@@ -58,7 +58,15 @@ def run_docker(spec_path: str, runs_dir: str, removed: str | None = None) -> dic
     try:
         subprocess.run(["docker", "build", "-q", "-t", "cemt-node", "."], cwd=bundle,
                        check=True, timeout=900, capture_output=True, text=True)
-        _compose(bundle, "up", "-d", "--remove-orphans")
+        # never reuse containers: in-memory node state must start fresh
+        try:
+            _compose(bundle, "down", "--remove-orphans", timeout=300)
+        except Exception:
+            pass
+        # start the node services only: the probe service in the compose file
+        # would otherwise run the scenario itself on `up`
+        node_services = [n.id for n in spec.nodes]
+        _compose(bundle, "up", "-d", "--force-recreate", "--remove-orphans", *node_services)
         if removed:
             _compose(bundle, "stop", removed)
         cmd = ["run", "--rm", "--no-deps", "probe", "python", "probe.py", "/app/spec.yaml",
@@ -79,6 +87,8 @@ def run_docker(spec_path: str, runs_dir: str, removed: str | None = None) -> dic
     with open(os.path.join(out, tag)) as f:
         r = json.load(f)
     r["removed"] = removed
+    if "error" in r.get("observed", {}):
+        raise RuntimeError(f"{spec.id}: probe error: {r['observed']['error']}")
     return r
 
 

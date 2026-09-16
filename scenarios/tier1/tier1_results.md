@@ -17,8 +17,8 @@
 | c15_fanout | 1B Fan-out: one supplier, six receivers, single step | True | ok | ok | - | yes |
 | c16_boundary_not_crossed | negative control: system-of-systems relation runs vendor to estate only | True | ok | ok | - | yes |
 | c17_two_planes | conferral chains across planes with the detection window at each stage | True | ok | ok | - | yes |
-| c18_micro_01_mixed | all relation classes together | True | ok | ok | -db-1:ok -config-server:ok | yes |
+| c18_micro_01_mixed | all relation classes together | True | ok | ok | -db-1:FAIL -config-server:ok | NO |
 | c19_cycle | termination under cyclic structure | True | ok | ok | - | yes |
 | c20_static_x_supply | 1B: a relation supplies a condition without the supplier being compromised; Cut still holds | True | ok | ok | -up:ok | yes |
 
-20/20 scenarios pass.
+19/20 scenarios pass.
