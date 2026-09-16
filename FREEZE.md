@@ -1,10 +1,10 @@
 # FREEZE record
 
 - core version: 0.6-skeleton
-- git commit: 45c168af33f064ec8cabb13a81de66baead97e8f
-- frozen at: 2026-09-16T16:46:53+00:00
+- git commit: 5864a5e4a47c6385ab93e63ba98e9ce0b82a33c7
+- frozen at: 2026-09-16T16:54:31+00:00
 - scenarios: 20
-- set digest (SHA-256 over all frozen files): `fc6490fc336227e7aa9dbe6e01ded330f03df975b4fdd5d3df269bb0e2d85670`
+- set digest (SHA-256 over all frozen files): `e4d2982f255367fb16f7199a169a81a2c461b8427febe2167bbde7be42d6348b`
 
 Any change to a frozen file after this record is a model or scenario
 revision and requires a new record. Verify with
@@ -12,13 +12,6 @@ revision and requires a new record. Verify with
 
 | File | SHA-256 |
 |---|---|
-| cemt_core/.vs/VSWorkspaceState.json | `9804fe475fb44f3c…` |
-| cemt_core/.vs/cemt_core/CopilotIndices/17.14.1681.23550/CodeChunks.db | `b4d16a869069fdcf…` |
-| cemt_core/.vs/cemt_core/CopilotIndices/17.14.1681.23550/SemanticSymbols.db | `0d5c3dbb36a4f3f3…` |
-| cemt_core/.vs/cemt_core/FileContentIndex/70b5d90f-ba2b-475a-9bed-3e457faa37e0.vsidx | `0195fdef4c582a79…` |
-| cemt_core/.vs/cemt_core/v17/.wsuo | `4a7c4617cbb6e995…` |
-| cemt_core/.vs/cemt_core/v17/DocumentLayout.json | `e6f6e16a9aee3698…` |
-| cemt_core/.vs/slnx.sqlite | `278a2850f0b96316…` |
 | cemt_core/__init__.py | `fc5179ac46382c20…` |
 | cemt_core/layers.py | `691aaff82e4d1b8f…` |
 | cemt_core/network.py | `703eb1d7b3d0ca4c…` |
