@@ -1,7 +1,7 @@
 {
   "core_version": "0.7",
-  "git_commit": "not in a git checkout",
-  "frozen_at": "2026-09-16T17:06:56+00:00",
+  "git_commit": "103edc734e7b2a41052340935d801a652aeb5155",
+  "frozen_at": "2026-09-16T17:08:37+00:00",
   "set_digest": "8477d51c0bd25c76fd7cc093f95c02024dfa4d19372acc99ba0bf8b5dfa794bd",
   "n_scenarios": 20,
   "files": {
