@@ -1,6 +1,7 @@
-id: c14_channel_cut
+id: c06_directing_external_trust
 spec_version: '0.1'
-description: Member's only X supply is the channel root.
+description: Vendor directs two update agents (directing External Trust); non-member
+  untouched.
 governance:
 - id: estate
   defender_controlled: true
@@ -16,41 +17,50 @@ nodes:
   visible: true
   impact: 1.0
   zones: []
-- id: m
+- id: m1
   governance: estate
   interface: false
-  execution_pathway: false
-  authority: true
-  state_object: state
-  visible: true
-  impact: 1.0
-  zones:
-  - 1
-- id: peer
-  governance: estate
-  interface: true
   execution_pathway: true
   authority: true
   state_object: state
   visible: true
   impact: 1.0
   zones:
-  - 0
   - 1
+- id: m2
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones:
+  - 2
+- id: other
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones:
+  - 3
 relations:
 - supplier: vendor
-  receiver: m
-  condition: X
-  relation_class: channel
+  receiver: m1
+  condition: A
+  relation_class: control_plane_directing
   conferral: true
-  group: ch
-- supplier: peer
-  receiver: m
-  condition: I
-  relation_class: connection
-  conferral: false
-  group: null
-entry_node: peer
+  group: upd
+- supplier: vendor
+  receiver: m2
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+entry_node: vendor
 deterministic: true
 ablation:
   structure: true

@@ -56,10 +56,10 @@ relations:
   group: null
 - supplier: vendor
   receiver: m
-  condition: X
-  relation_class: channel
+  condition: A
+  relation_class: control_plane_directing
   conferral: true
-  group: ch
+  group: upd
 entry_node: a
 deterministic: true
 ablation:

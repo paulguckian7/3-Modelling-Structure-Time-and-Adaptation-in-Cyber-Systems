@@ -1,65 +1,57 @@
-id: c06_channel_delivery
+id: c13_conferring_cut
 spec_version: '0.1'
-description: Vendor root delivers to channel members only; non-member untouched.
+description: Member's only Authority supply is a conferring issuer.
 governance:
 - id: estate
   defender_controlled: true
 - id: vendor
   defender_controlled: false
 nodes:
-- id: vendor
-  governance: vendor
+- id: a
+  governance: estate
   interface: true
   execution_pathway: true
   authority: true
-  state_object: feed
+  state_object: state
   visible: true
   impact: 1.0
-  zones: []
-- id: m1
+  zones:
+  - 0
+  - 1
+- id: iss
   governance: estate
   interface: false
   execution_pathway: true
   authority: true
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones:
+  - 9
+- id: m
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: false
   state_object: state
   visible: true
   impact: 1.0
   zones:
   - 1
-- id: m2
-  governance: estate
-  interface: false
-  execution_pathway: true
-  authority: true
-  state_object: state
-  visible: true
-  impact: 1.0
-  zones:
-  - 2
-- id: other
-  governance: estate
-  interface: false
-  execution_pathway: true
-  authority: true
-  state_object: state
-  visible: true
-  impact: 1.0
-  zones:
-  - 3
 relations:
-- supplier: vendor
-  receiver: m1
-  condition: X
-  relation_class: channel
-  conferral: true
-  group: ch
-- supplier: vendor
-  receiver: m2
-  condition: X
-  relation_class: channel
-  conferral: true
-  group: ch
-entry_node: vendor
+- supplier: a
+  receiver: m
+  condition: I
+  relation_class: connection
+  conferral: false
+  group: null
+- supplier: iss
+  receiver: m
+  condition: A
+  relation_class: control_plane_conferring
+  conferral: false
+  group: idp
+entry_node: a
 deterministic: true
 ablation:
   structure: true

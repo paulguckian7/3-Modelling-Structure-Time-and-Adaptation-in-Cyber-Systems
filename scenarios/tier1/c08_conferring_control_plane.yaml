@@ -1,32 +1,24 @@
-id: c07_channel_confers_x
+id: c08_conferring_control_plane
 spec_version: '0.1'
-description: Member lacks Execution Pathway; channel delivery confers it.
+description: Issuer establishes A for members lacking it; reach still needs admission.
 governance:
 - id: estate
   defender_controlled: true
 - id: vendor
   defender_controlled: false
 nodes:
-- id: vendor
-  governance: vendor
+- id: a
+  governance: estate
   interface: true
   execution_pathway: true
   authority: true
-  state_object: feed
-  visible: true
-  impact: 1.0
-  zones: []
-- id: m1
-  governance: estate
-  interface: false
-  execution_pathway: false
-  authority: true
   state_object: state
   visible: true
   impact: 1.0
   zones:
+  - 0
   - 1
-- id: peer
+- id: iss
   governance: estate
   interface: false
   execution_pathway: true
@@ -35,21 +27,68 @@ nodes:
   visible: true
   impact: 1.0
   zones:
+  - 9
+- id: m1
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: false
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones:
   - 1
+- id: m2
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: false
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
+- id: m_noadmit
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: false
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones: []
 relations:
-- supplier: vendor
+- supplier: a
   receiver: m1
-  condition: X
-  relation_class: channel
-  conferral: true
-  group: ch
-- supplier: m1
-  receiver: peer
   condition: I
   relation_class: connection
   conferral: false
   group: null
-entry_node: vendor
+- supplier: a
+  receiver: m2
+  condition: I
+  relation_class: connection
+  conferral: false
+  group: null
+- supplier: iss
+  receiver: m1
+  condition: A
+  relation_class: control_plane_conferring
+  conferral: false
+  group: idp
+- supplier: iss
+  receiver: m2
+  condition: A
+  relation_class: control_plane_conferring
+  conferral: false
+  group: idp
+- supplier: iss
+  receiver: m_noadmit
+  condition: A
+  relation_class: control_plane_conferring
+  conferral: false
+  group: idp
+entry_node: a
 deterministic: true
 ablation:
   structure: true

@@ -22,7 +22,7 @@ Code80 correspondence
   execution_prob          -> x_prob (Execution Pathway gating)
   channel_root external   -> supplier node in a non-defender governance domain
   control_planes matrix   -> control_plane relations with conferral
-  dep_targets             -> dependency relations
+  dep_targets             -> channel relations (1B Channel / Dependency)
 """
 
 from __future__ import annotations
@@ -64,9 +64,10 @@ class NetworkState:
     sup_I: np.ndarray = None
     sup_X: np.ndarray = None
     sup_A: np.ndarray = None
-    # control-plane groups: group id -> (controller index, member indices)
+    # directing control planes: group id -> (controller index, member indices)
     control_planes: Dict[str, tuple] = field(default_factory=dict)
-    channels: Dict[str, tuple] = field(default_factory=dict)
+    # conferring control planes: group id -> (issuer index, member indices)
+    conferring_planes: Dict[str, tuple] = field(default_factory=dict)
 
     def capability_static(self, j: int) -> bool:
         """I ∧ X ∧ A from the static supply table (any supplier, any state)."""
@@ -99,11 +100,11 @@ def build_network(spec: ScenarioSpec, rng: np.random.Generator) -> NetworkState:
     access = {rc: np.zeros((N, N), dtype=bool) for rc in RelationClass}
     conferral = np.zeros((N, N), dtype=bool)
     control_planes: Dict[str, tuple] = {}
-    channels: Dict[str, tuple] = {}
-    cp_members: Dict[str, List[int]] = {}
-    cp_controller: Dict[str, int] = {}
-    ch_members: Dict[str, List[int]] = {}
-    ch_root: Dict[str, int] = {}
+    conferring_planes: Dict[str, tuple] = {}
+    cpd_members: Dict[str, List[int]] = {}
+    cpd_ctl: Dict[str, int] = {}
+    cpc_members: Dict[str, List[int]] = {}
+    cpc_iss: Dict[str, int] = {}
 
     for r in spec.relations:
         i, j = index[r.supplier], index[r.receiver]
@@ -112,17 +113,19 @@ def build_network(spec: ScenarioSpec, rng: np.random.Generator) -> NetworkState:
             access[r.relation_class][j, i] = True     # adjacency is symmetric
         if r.conferral:
             conferral[i, j] = True
-        if r.relation_class == RelationClass.CONTROL_PLANE and r.group:
-            cp_controller[r.group] = i
-            cp_members.setdefault(r.group, []).append(j)
-        if r.relation_class == RelationClass.CHANNEL and r.group:
-            ch_root[r.group] = i
-            ch_members.setdefault(r.group, []).append(j)
+        if r.relation_class == RelationClass.CONTROL_PLANE_DIRECTING:
+            g = r.group or f"cpd-{r.supplier}"
+            cpd_ctl[g] = i
+            cpd_members.setdefault(g, []).append(j)
+        if r.relation_class == RelationClass.CONTROL_PLANE_CONFERRING:
+            g = r.group or f"cpc-{r.supplier}"
+            cpc_iss[g] = i
+            cpc_members.setdefault(g, []).append(j)
 
-    for g, m in cp_members.items():
-        control_planes[g] = (cp_controller[g], np.array(sorted(set(m))))
-    for g, m in ch_members.items():
-        channels[g] = (ch_root[g], np.array(sorted(set(m))))
+    for g, m in cpd_members.items():
+        control_planes[g] = (cpd_ctl[g], np.array(sorted(set(m))))
+    for g, m in cpc_members.items():
+        conferring_planes[g] = (cpc_iss[g], np.array(sorted(set(m))))
 
     sup = {c: np.array([len(table.supply(nid, c)) > 0 for nid in ids]) for c in Condition}
 
@@ -134,7 +137,7 @@ def build_network(spec: ScenarioSpec, rng: np.random.Generator) -> NetworkState:
         x_present=x_present, a_present=a_present,
         x_prob=x_prob, a_prob=a_prob, visible=visible, impact=impact,
         access=access, conferral=conferral,
-        control_planes=control_planes, channels=channels,
+        control_planes=control_planes, conferring_planes=conferring_planes,
     )
 
 
@@ -213,7 +216,8 @@ def generate_spec(params: Dict, seed: int = 42, scenario_id: str | None = None,
                 relations.append(Relation(mem[a], mem[b], Condition.INTERFACE,
                                           RelationClass.CONNECTION))
 
-    # --- channels: roots supply X; external roots live in vendor domain --
+    # --- update planes: roots direct members; external roots are vendors,
+    #     i.e. directing External Trust (1B 3.5). Members keep local X and A.
     ch_members: Dict[int, List[str]] = {c: [] for c in range(n_ch)}
     for n in nodes:
         k = min(max(0, int(rng.poisson(avg_ch))), n_ch)
@@ -231,9 +235,9 @@ def generate_spec(params: Dict, seed: int = 42, scenario_id: str | None = None,
             root = mem[int(rng.integers(len(mem)))]
         for m in mem:
             if m != root:
-                relations.append(Relation(root, m, Condition.EXECUTION_PATHWAY,
-                                          RelationClass.CHANNEL, conferral=True,
-                                          group=f"ch{c}"))
+                relations.append(Relation(root, m, Condition.AUTHORITY,
+                                          RelationClass.CONTROL_PLANE_DIRECTING,
+                                          conferral=True, group=f"upd{c}"))
 
     # --- control planes: controller supplies A to members ---------------
     estate_ids = [n.id for n in nodes if n.governance == "estate"]
@@ -250,17 +254,17 @@ def generate_spec(params: Dict, seed: int = 42, scenario_id: str | None = None,
         for m in mem:
             if m != ctl:
                 relations.append(Relation(ctl, m, Condition.AUTHORITY,
-                                          RelationClass.CONTROL_PLANE,
+                                          RelationClass.CONTROL_PLANE_DIRECTING,
                                           conferral=True, group=f"cp{p}"))
 
-    # --- dependencies: directed, supply X ------------------------------
+    # --- channels (1B): directed routes supplying X --------------------
     if dep > 0 and N >= 2:
         p_edge = dep / max(N - 1, 1)
         E = rng.random((N, N)) < p_edge
         np.fill_diagonal(E, False)
         for i, j in zip(*np.nonzero(E)):
             relations.append(Relation(f"n{i}", f"n{j}", Condition.EXECUTION_PATHWAY,
-                                      RelationClass.DEPENDENCY))
+                                      RelationClass.CHANNEL))
 
     rate_keys = RateSpec.__dataclass_fields__.keys()
     rates = RateSpec(**{k: params[k] for k in rate_keys if k in params})

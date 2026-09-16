@@ -1,34 +1,23 @@
-id: c11_dependency_cut
+id: c07_directing_needs_local_x
 spec_version: '0.1'
-description: Receiver's only X supply is one dependency.
+description: Directed member lacks a local Execution Pathway; vendor content cannot
+  be given effect.
 governance:
 - id: estate
   defender_controlled: true
 - id: vendor
   defender_controlled: false
 nodes:
-- id: a
-  governance: estate
+- id: vendor
+  governance: vendor
   interface: true
   execution_pathway: true
   authority: true
-  state_object: state
+  state_object: feed
   visible: true
   impact: 1.0
-  zones:
-  - 0
-  - 1
-- id: up
-  governance: estate
-  interface: false
-  execution_pathway: true
-  authority: true
-  state_object: state
-  visible: true
-  impact: 1.0
-  zones:
-  - 1
-- id: r
+  zones: []
+- id: m1
   governance: estate
   interface: false
   execution_pathway: false
@@ -38,26 +27,30 @@ nodes:
   impact: 1.0
   zones:
   - 1
+- id: m2
+  governance: estate
+  interface: false
+  execution_pathway: true
+  authority: true
+  state_object: state
+  visible: true
+  impact: 1.0
+  zones:
+  - 1
 relations:
-- supplier: a
-  receiver: up
-  condition: I
-  relation_class: connection
-  conferral: false
-  group: null
-- supplier: a
-  receiver: r
-  condition: I
-  relation_class: connection
-  conferral: false
-  group: null
-- supplier: up
-  receiver: r
-  condition: X
-  relation_class: dependency
-  conferral: false
-  group: null
-entry_node: a
+- supplier: vendor
+  receiver: m1
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+- supplier: vendor
+  receiver: m2
+  condition: A
+  relation_class: control_plane_directing
+  conferral: true
+  group: upd
+entry_node: vendor
 deterministic: true
 ablation:
   structure: true

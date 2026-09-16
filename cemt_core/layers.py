@@ -16,13 +16,11 @@ Deterministic mode (structural correspondence tier)
   the run traces the structural reach of an entry and nothing else. Tier 2
   (temporal, ordinal) runs stochastic with remediation on.
 
-Attacker access through relations
-  connection     compromised peer i reaches j; j's own X and A gate the hit
-  channel        compromised root i delivers to member j; I is bypassed
-                 (pre-positioned delivery), X is conferred, A gates
-  control_plane  owned plane's controller reaches members; A is conferred,
-                 X gates
-  dependency     compromised upstream i fails j directly (systemic cascade)
+Attacker access through relations (Paper 1B classes; see layer2_systematic)
+  connection                compromised peer reaches j; j's X and A gate
+  channel                   compromised upstream on j's route reaches j; A gates
+  control_plane_directing   owned plane pushes to members; X and A gate
+  control_plane_conferring  no push; standing A supply only
 """
 
 from __future__ import annotations
@@ -138,7 +136,17 @@ def layer1_entry(net: NetworkState, st: SystemState, entry: int,
 
 
 # ---------------------------------------------------------------------------
-# Layer 2: systematic propagation over connection, channel, control plane
+# Layer 2: systematic propagation over the 1B relation classes
+#
+#   connection   compromised peer i -> j. Supplies I; j needs standing X, A.
+#   channel      compromised upstream i on j's route -> j. The route is X and
+#                admission precedes it (X assessed conditional on admission,
+#                1B 3.4); j needs standing A.
+#   directing CP owned plane's controller -> members. Composition supplies
+#                admission; A is local and directed, X local: j needs
+#                standing X and A.
+#   conferring CP no push. The issuer supplies A standing (Cut applies);
+#                compromise of the issuer confers no position by itself.
 # ---------------------------------------------------------------------------
 
 def layer2_systematic(net: NetworkState, st: SystemState,
@@ -157,10 +165,9 @@ def layer2_systematic(net: NetworkState, st: SystemState,
         if p <= 0:
             return
         prob[j] = 1.0 - (1.0 - prob[j]) * (1.0 - p)
-        # record every class that offers access, in evaluation order
         via[j] = cls if j not in via else via[j] + "|" + cls
 
-    # connection: compromised peer i -> j, j's X and A gate the hit
+    # connection
     A = net.access[RelationClass.CONNECTION]
     exposure = (A.T @ comp.astype(float))
     for j in np.flatnonzero((exposure > 0) & healthy):
@@ -171,26 +178,26 @@ def layer2_systematic(net: NetworkState, st: SystemState,
         p = 1.0 if det else 1.0 - (1.0 - min(p_per, 1.0)) ** k
         _accumulate(j, p, "connection")
 
-    # channel: compromised root delivers to members; X conferred, A gates
-    for g, (root, members) in net.channels.items():
-        if not comp[root]:
-            continue
-        for j in members:
+    # channel (route): compromised upstream reaches downstream
+    C = net.access[RelationClass.CHANNEL]
+    base_tp = 1.0 - 1.0 / (1.0 + r.dependency_factor)
+    for i in np.flatnonzero(comp):
+        for j in np.flatnonzero(C[i]):
             if not healthy[j] or not path_capability(net, j, "IX"):
                 continue
-            p = 1.0 if det else r.synchrony * net.a_prob[j] * T
+            p = 1.0 if det else min(1.0, base_tp * (1.0 + st.drift[j]) * net.a_prob[j] * T)
             _accumulate(j, p, "channel")
 
-    # control plane: owned plane reaches members; A conferred, X gates
+    # directing control plane: owned plane pushes to members
     for g, (ctl, members) in net.control_planes.items():
         if not st.owned_cp.get(g, False):
             continue
         for j in members:
-            if not healthy[j] or not path_capability(net, j, "IA"):
+            if not healthy[j] or not path_capability(net, j, "I"):
                 continue
             p = 1.0 if det else (r.beta_conn * min(1.0, r.authority_boost)
-                                 * net.x_prob[j] * st.exec_modifier[j] * T)
-            _accumulate(j, p, "control_plane")
+                                 * net.x_prob[j] * st.exec_modifier[j] * net.a_prob[j] * T)
+            _accumulate(j, p, "control_plane_directing")
 
     if det:
         hits = (prob > 0) & healthy
@@ -202,7 +209,7 @@ def layer2_systematic(net: NetworkState, st: SystemState,
 
 
 # ---------------------------------------------------------------------------
-# Layer 3: systemic (control-plane takeover, dependency cascade)
+# Layer 3: systemic (directing control-plane takeover)
 # ---------------------------------------------------------------------------
 
 def layer3_systemic(net: NetworkState, st: SystemState,
@@ -210,10 +217,6 @@ def layer3_systemic(net: NetworkState, st: SystemState,
     det = net.spec.deterministic
     r = net.spec.rates
     comp = st.compromise == NodeState.COMPROMISED
-    healthy = st.compromise == NodeState.HEALTHY
-
-    # takeover: controller compromised -> owned (conferral of A downstream);
-    # otherwise compromised members may take it over stochastically
     for g, (ctl, members) in net.control_planes.items():
         if st.owned_cp.get(g, False):
             continue
@@ -226,25 +229,10 @@ def layer3_systemic(net: NetworkState, st: SystemState,
         k = int(comp[members].sum())
         if k == 0:
             continue
-        p = 1.0 - (1.0 - r.control_plane_takeover_rate) ** k
-        if rng.random() < p:
+        if rng.random() < 1.0 - (1.0 - r.control_plane_takeover_rate) ** k:
             st.owned_cp[g] = True
             st.audit["planes_owned"].append((st.step, g, "members"))
-
-    # dependency cascade: compromised upstream fails healthy downstream
-    D = net.access[RelationClass.DEPENDENCY]
-    base_tp = 1.0 - 1.0 / (1.0 + r.dependency_factor)
-    hits = np.zeros(net.N, dtype=bool)
-    via: Dict[int, str] = {}
-    for i in np.flatnonzero(comp):
-        for j in np.flatnonzero(D[i]):
-            if not healthy[j] or hits[j]:
-                continue
-            p = 1.0 if det else min(1.0, base_tp * (1.0 + st.drift[j]))
-            if _gate(p, det, rng):
-                hits[j] = True
-                via[j] = "dependency"
-    return StateDelta(newly_infected=hits, infected_via=via, source="layer3")
+    return StateDelta(source="layer3")
 
 
 # ---------------------------------------------------------------------------
@@ -343,8 +331,8 @@ def update_phantoms(net: NetworkState, st: SystemState,
     for j in np.flatnonzero(net.external):
         if st.compromise[j] != NodeState.HEALTHY:
             continue
-        is_root = any(root == j for root, _ in net.channels.values())
-        rate = r.phantom_channel_rate if is_root else r.phantom_dep_rate
+        is_ctl = any(ctl == j for ctl, _ in net.control_planes.values())
+        rate = r.phantom_cp_rate if is_ctl else r.phantom_channel_rate
         if rate > 0 and rng.random() < rate:
             st.compromise[j] = NodeState.COMPROMISED
             st.compromised_at[j] = st.step

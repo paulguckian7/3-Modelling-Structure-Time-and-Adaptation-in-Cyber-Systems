@@ -6,20 +6,16 @@ One identical service per container. Standard library only. Configuration
 arrives entirely through environment variables written by docker_render
 from the ScenarioSpec, so every container is the same image.
 
-IAE realisation
-  Interface          /deliver/entry (external admission) is accepted only
-                     when INTERFACE=1; otherwise 403 "no interface".
+IAE realisation (Paper 1B relation classes)
+  Interface          /deliver/entry (external admission) requires INTERFACE=1.
                      /deliver/connection is admission through a connection
-                     relation, which supplies I at system level (Paper 1B),
-                     so it does not require the node-level flag.
-  Execution Pathway  a delivered payload is routed to the handler only when
-                     EXEC_PATHWAY=1 or a live X supplier exists (X_SUPPLIERS,
-                     the static dependency suppliers) or the delivery itself
-                     confers X (channel delivery).
-  Authority          the handler writes the state object only when
-                     AUTHORITY=1, or a live A supplier exists (A_SUPPLIERS,
-                     the static control-plane controllers), or the delivery
-                     confers A (control-plane push with the plane token).
+                     relation (supplies I). /deliver/cp is admission through
+                     a directing control plane (composition, supplies I).
+  Execution Pathway  EXEC_PATHWAY=1, or a live upstream on a channel route
+                     (X_SUPPLIERS), or the delivery arrives along the route
+                     (/deliver/channel).
+  Authority          AUTHORITY=1, or a live conferring issuer (A_SUPPLIERS).
+                     A directing push does not supply A; A is local.
   Payload            the request body; processing it changes the state
                      object, which is what "compromised" means here.
 
@@ -28,10 +24,10 @@ rounds by calling /act on every compromised node; a node infected in round
 k acts from round k+1 (the one-step detection window of Layer 4).
 
 Relations (outward, executed on /act in this order, matching layers.py):
-  connection   CONN_PEERS       POST peer/deliver/connection
-  channel      CHANNEL_MEMBERS  POST member/deliver/channel   (token)
-  control plane CP_GROUP        first act: own plane; later: POST member/deliver/cp
-  dependency   DEP_DOWNSTREAM   POST down/deliver/dependency
+  connection     CONN_PEERS         POST peer/deliver/connection
+  channel        CHANNEL_DOWNSTREAM POST down/deliver/channel
+  directing CP   CP_GROUP           first act: own plane; later: POST member/deliver/cp
+  conferring CP  (none)             issuer pushes nothing
 """
 
 import json
@@ -66,14 +62,11 @@ PORT = int(env("PORT", "8000"))
 X_SUPPLIERS = env_list("X_SUPPLIERS")
 A_SUPPLIERS = env_list("A_SUPPLIERS")
 CONN_PEERS = env_list("CONN_PEERS")
-CHANNEL_MEMBERS = env_list("CHANNEL_MEMBERS")
-CHANNEL_TOKEN = env("CHANNEL_TOKEN")
-CHANNEL_MEMBER_TOKENS = env_list("CHANNEL_MEMBER_TOKENS")
-CP_GROUP = env("CP_GROUP")                 # group id when this node is controller
+CHANNEL_DOWNSTREAM = env_list("CHANNEL_DOWNSTREAM")
+CP_GROUP = env("CP_GROUP")                 # group id when this node is directing controller
 CP_MEMBERS = env_list("CP_MEMBERS")
 CP_TOKEN = env("CP_TOKEN")
 CP_MEMBER_TOKENS = env_list("CP_MEMBER_TOKENS")
-DEP_DOWNSTREAM = env_list("DEP_DOWNSTREAM")
 
 # address book: "id=host:port,..." ; in Docker every id resolves to id:8000
 ADDRS = dict(x.split("=", 1) for x in env_list("ADDRS"))
@@ -130,7 +123,7 @@ def supplier_alive(node_id):
 def has_i():
     """I for system-level delivery: the node-level flag or any admission
     relation (a zone peer). Node-level INTERFACE alone gates external entry."""
-    return INTERFACE or bool(CONN_PEERS) or bool(CHANNEL_MEMBER_TOKENS) or bool(CP_MEMBER_TOKENS)
+    return INTERFACE or bool(CONN_PEERS) or bool(CP_MEMBER_TOKENS)
 
 
 def has_x(delivery_confers_x):
@@ -178,9 +171,9 @@ def act(step):
         s, r = http("POST", peer, "/deliver/connection", body)
         log.append(("connection", peer, s, r.get("msg")))
 
-    for m in CHANNEL_MEMBERS:
-        s, r = http("POST", m, "/deliver/channel", {**body, "token": CHANNEL_TOKEN})
-        log.append(("channel", m, s, r.get("msg")))
+    for d in CHANNEL_DOWNSTREAM:
+        s, r = http("POST", d, "/deliver/channel", body)
+        log.append(("channel", d, s, r.get("msg")))
 
     if CP_GROUP:
         with LOCK:
@@ -192,11 +185,7 @@ def act(step):
         elif owned_at < step:
             for m in CP_MEMBERS:
                 s, r = http("POST", m, "/deliver/cp", {**body, "token": CP_TOKEN})
-                log.append(("control_plane", m, s, r.get("msg")))
-
-    for d in DEP_DOWNSTREAM:
-        s, r = http("POST", d, "/deliver/dependency", body)
-        log.append(("dependency", d, s, r.get("msg")))
+                log.append(("control_plane_directing", m, s, r.get("msg")))
 
     return {"acted": True, "log": log}
 
@@ -239,20 +228,16 @@ class Handler(BaseHTTPRequestHandler):
             code, msg = process_payload(step, "connection", b.get("payload"),
                                         needs_interface=False)
         elif self.path == "/deliver/channel":
-            if b.get("token") not in CHANNEL_MEMBER_TOKENS:
-                code, msg = 403, "not a channel member"
-            else:
-                code, msg = process_payload(step, "channel", b.get("payload"),
-                                            confers_x=True, needs_interface=False)
+            # arrival along the route: X is the route, admission preceded it
+            code, msg = process_payload(step, "channel", b.get("payload"),
+                                        confers_x=True, needs_interface=False)
         elif self.path == "/deliver/cp":
             if b.get("token") not in CP_MEMBER_TOKENS:
                 code, msg = 403, "not a plane member"
             else:
-                code, msg = process_payload(step, "control_plane", b.get("payload"),
-                                            confers_a=True)
-        elif self.path == "/deliver/dependency":
-            code, msg = process_payload(step, "dependency", b.get("payload"),
-                                        confers_x=True, needs_interface=False)
+                # directing form: admission composed, X and A local
+                code, msg = process_payload(step, "control_plane_directing",
+                                            b.get("payload"), needs_interface=False)
         else:
             code, msg = 404, "not found"
         self._send(code, {"msg": msg, "node": NODE_ID})

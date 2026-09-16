@@ -60,7 +60,7 @@ def test_level_derived_from_governance(micro):
 
 def test_fan_out(micro):
     rt = RelationTable(micro)
-    assert rt.fan_out("config-server", relation_class=RelationClass.CONTROL_PLANE) == 3
+    assert rt.fan_out("config-server", relation_class=RelationClass.CONTROL_PLANE_DIRECTING) == 3
     assert rt.fan_out("vendor-update") == 2
     assert rt.fan_out("app-2", relation_class=RelationClass.CONNECTION) == 2  # symmetric
     assert rt.fan_out_table()["vendor-update"]["sos"] == 2
@@ -69,17 +69,18 @@ def test_fan_out(micro):
 def test_cut_golden(micro):
     rt = RelationTable(micro)
     cuts = {(s, r, c.value, k.value) for s, r, c, k in rt.cut_table()}
-    assert ("db-1", "app-2", "X", "dependency") in cuts
+    assert ("db-1", "app-2", "X", "channel") in cuts
     # connection adjacency is symmetric, so app-1 and app-2 each have two
     # Interface suppliers and only config-server (adjacent to web-1 alone)
     # is an Interface Cut
     assert ("web-1", "config-server", "I", "connection") in cuts
     # host-3's only admission is its plane membership (Sept 2026 decision:
     # channel and control-plane membership supply Interface)
-    assert ("config-server", "host-3", "I", "control_plane") in cuts
+    assert ("config-server", "host-3", "I", "control_plane_directing") in cuts
     assert len(cuts) == 3
-    assert rt.cut_density_by_class() == {"connection": 1, "channel": 0,
-                                         "control_plane": 1, "dependency": 1}
+    assert rt.cut_density_by_class() == {"connection": 1, "channel": 1,
+                                         "control_plane_directing": 1,
+                                         "control_plane_conferring": 0}
 
 
 def test_negative_control_lacks_capability(micro):
@@ -95,7 +96,7 @@ def test_negative_control_lacks_capability(micro):
 def test_cut_is_derived_not_parameter(micro):
     # adding a second X supply to app-2 removes the Cut, nothing else changes
     extra = Relation("app-1", "app-2", Condition.EXECUTION_PATHWAY,
-                     RelationClass.DEPENDENCY)
+                     RelationClass.CHANNEL)
     spec2 = dataclasses.replace(micro, relations=micro.relations + [extra])
     cuts = {(s, r, c) for s, r, c, _ in RelationTable(spec2).cut_table()}
     assert ("db-1", "app-2", Condition.EXECUTION_PATHWAY) not in cuts

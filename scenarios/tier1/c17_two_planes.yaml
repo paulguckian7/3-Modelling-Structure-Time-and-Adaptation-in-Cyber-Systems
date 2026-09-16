@@ -33,7 +33,7 @@ nodes:
   governance: estate
   interface: false
   execution_pathway: true
-  authority: false
+  authority: true
   state_object: state
   visible: true
   impact: 1.0
@@ -53,7 +53,7 @@ nodes:
   governance: estate
   interface: false
   execution_pathway: true
-  authority: false
+  authority: true
   state_object: state
   visible: true
   impact: 1.0
@@ -69,7 +69,7 @@ relations:
 - supplier: c1
   receiver: s
   condition: A
-  relation_class: control_plane
+  relation_class: control_plane_directing
   conferral: true
   group: p1
 - supplier: s
@@ -81,7 +81,7 @@ relations:
 - supplier: c2
   receiver: m2
   condition: A
-  relation_class: control_plane
+  relation_class: control_plane_directing
   conferral: true
   group: p2
 entry_node: a

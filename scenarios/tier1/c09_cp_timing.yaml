@@ -32,7 +32,7 @@ nodes:
   governance: estate
   interface: false
   execution_pathway: true
-  authority: false
+  authority: true
   state_object: state
   visible: true
   impact: 1.0
@@ -48,7 +48,7 @@ relations:
 - supplier: ctl
   receiver: m
   condition: A
-  relation_class: control_plane
+  relation_class: control_plane_directing
   conferral: true
   group: cp
 entry_node: a

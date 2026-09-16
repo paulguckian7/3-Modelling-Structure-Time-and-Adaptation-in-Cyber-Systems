@@ -1,6 +1,6 @@
-id: c08_control_plane_conferral
+id: c11_channel_cut
 spec_version: '0.1'
-description: Controller compromised laterally; plane confers A to members.
+description: Receiver's only X supply is one channel route.
 governance:
 - id: estate
   defender_controlled: true
@@ -18,7 +18,7 @@ nodes:
   zones:
   - 0
   - 1
-- id: ctl
+- id: up
   governance: estate
   interface: false
   execution_pathway: true
@@ -28,66 +28,35 @@ nodes:
   impact: 1.0
   zones:
   - 1
-- id: m1
+- id: r
   governance: estate
   interface: false
-  execution_pathway: true
-  authority: false
+  execution_pathway: false
+  authority: true
   state_object: state
   visible: true
   impact: 1.0
   zones:
-  - 2
-- id: m2
-  governance: estate
-  interface: false
-  execution_pathway: true
-  authority: false
-  state_object: state
-  visible: true
-  impact: 1.0
-  zones:
-  - 2
-- id: m_planeonly
-  governance: estate
-  interface: false
-  execution_pathway: true
-  authority: false
-  state_object: state
-  visible: true
-  impact: 1.0
-  zones: []
+  - 1
 relations:
 - supplier: a
-  receiver: ctl
+  receiver: up
   condition: I
   relation_class: connection
   conferral: false
   group: null
-- supplier: m1
-  receiver: m2
+- supplier: a
+  receiver: r
   condition: I
   relation_class: connection
   conferral: false
   group: null
-- supplier: ctl
-  receiver: m1
-  condition: A
-  relation_class: control_plane
-  conferral: true
-  group: cp
-- supplier: ctl
-  receiver: m2
-  condition: A
-  relation_class: control_plane
-  conferral: true
-  group: cp
-- supplier: ctl
-  receiver: m_planeonly
-  condition: A
-  relation_class: control_plane
-  conferral: true
-  group: cp
+- supplier: up
+  receiver: r
+  condition: X
+  relation_class: channel
+  conferral: false
+  group: null
 entry_node: a
 deterministic: true
 ablation:

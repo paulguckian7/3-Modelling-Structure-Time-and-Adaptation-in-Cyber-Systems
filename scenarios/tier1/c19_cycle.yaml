@@ -54,19 +54,19 @@ relations:
 - supplier: a
   receiver: b
   condition: X
-  relation_class: dependency
+  relation_class: channel
   conferral: false
   group: null
 - supplier: b
   receiver: c
   condition: X
-  relation_class: dependency
+  relation_class: channel
   conferral: false
   group: null
 - supplier: c
   receiver: a
   condition: X
-  relation_class: dependency
+  relation_class: channel
   conferral: false
   group: null
 entry_node: a

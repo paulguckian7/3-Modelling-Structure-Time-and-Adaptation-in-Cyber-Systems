@@ -28,7 +28,9 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple
 
-from .spec import Condition, Level, RelationClass, ScenarioSpec
+from .spec import CLASS_SUPPLIES, Condition, Level, RelationClass, ScenarioSpec
+
+_COND = {"I": Condition.INTERFACE, "X": Condition.EXECUTION_PATHWAY, "A": Condition.AUTHORITY}
 
 
 @dataclass
@@ -45,27 +47,20 @@ class RelationRow:
 class RelationTable:
     def __init__(self, spec: ScenarioSpec):
         self.spec = spec
+        # One row per condition the relation supplies standing (1B 3.4/3.5):
+        # connection I; channel X; directing control plane I (A is local and
+        # directed, not supplied); conferring control plane A.
         self.rows: List[RelationRow] = []
         for r in spec.relations:
-            self.rows.append(RelationRow(r.supplier, r.receiver, r.condition,
-                                         r.relation_class, spec.level_of(r),
-                                         r.conferral, r.group))
-            # connection relations are symmetric (zone co-membership admits in
-            # both directions); the table must reflect that or Cut will
-            # over-count sole Interface suppliers
-            if r.relation_class == RelationClass.CONNECTION:
-                self.rows.append(RelationRow(r.receiver, r.supplier, r.condition,
+            for c in CLASS_SUPPLIES[r.relation_class]:
+                self.rows.append(RelationRow(r.supplier, r.receiver, _COND[c],
                                              r.relation_class, spec.level_of(r),
                                              r.conferral, r.group))
-            # a channel or control-plane membership is itself an admission
-            # relation (the member accepts what the root or controller sends),
-            # so it supplies Interface in addition to its named condition
-            # (Paper 1A, CrowdStrike: the vendor channel IS the Interface)
-            if r.relation_class in (RelationClass.CHANNEL, RelationClass.CONTROL_PLANE) \
-                    and r.condition != Condition.INTERFACE:
-                self.rows.append(RelationRow(r.supplier, r.receiver, Condition.INTERFACE,
-                                             r.relation_class, spec.level_of(r),
-                                             r.conferral, r.group))
+                # connection is symmetric: zone co-membership admits both ways
+                if r.relation_class == RelationClass.CONNECTION:
+                    self.rows.append(RelationRow(r.receiver, r.supplier, _COND[c],
+                                                 r.relation_class, spec.level_of(r),
+                                                 r.conferral, r.group))
         # node-level instances: a node supplies its own condition to itself
         for n in spec.nodes:
             for cond, present in ((Condition.INTERFACE, n.interface),

@@ -1,6 +1,6 @@
-id: c10_dependency_cascade
+id: c10_channel_route_cascade
 spec_version: '0.1'
-description: Downstream nodes with no admission fail through dependency.
+description: Compromise moves along a channel route to downstream mechanisms.
 governance:
 - id: estate
   defender_controlled: true
@@ -56,13 +56,13 @@ relations:
 - supplier: up
   receiver: d1
   condition: X
-  relation_class: dependency
+  relation_class: channel
   conferral: false
   group: null
 - supplier: d1
   receiver: d2
   condition: X
-  relation_class: dependency
+  relation_class: channel
   conferral: false
   group: null
 entry_node: a

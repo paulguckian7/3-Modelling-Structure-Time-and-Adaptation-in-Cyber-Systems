@@ -35,31 +35,31 @@ the full trace plus one removal run per Cut supplier. This is also
 
 ## With Docker Desktop (Windows)
 
-1. Install Docker Desktop, WSL2 backend, and start it.
-2. Render the bundle (from the repo root):
+Install Docker Desktop (WSL2 backend) and start it. Then, from the repo
+root, the whole frozen set in one command:
 
-   ```
-   python -m docker_render.render scenarios/micro_01_supply_chain.yaml --out C:\cemt_runs\micro_01
-   ```
+```
+python -m docker_render.freeze --verify
+python -m docker_render.tier1_set --docker --runs-dir C:\cemt_runs
+```
 
-   Keep run folders outside OneDrive.
-3. Run the full trace:
+For each scenario this renders a bundle under `C:\cemt_runs\<scenario>`,
+builds the `cemt-node` image (once per bundle, cached after the first),
+starts fresh containers, runs the probe, and for each declared Cut restarts
+fresh containers with the supplier stopped and runs the probe again. It
+writes the same table, LaTeX and run record as the local mode, with the
+footnote and `mode` field set to `docker`. Keep the runs directory outside
+OneDrive. Expect roughly a minute per scenario.
 
-   ```
-   cd C:\cemt_runs\micro_01
-   docker compose up --build --abort-on-container-exit probe
-   ```
+Single scenario by hand, if you want to watch it:
 
-   The probe prints the observed and predicted traces and the verdict, and
-   writes `out\probe.json`. Exit code 0 means exact match.
-4. Cut check for a supplier, for example db-1:
-
-   ```
-   docker compose up -d --build
-   docker compose stop db-1
-   docker compose run --rm probe python probe.py /app/spec.yaml --removed db-1 --out /app/out/probe_no_db-1.json
-   docker compose down
-   ```
+```
+python -m docker_render.render scenarios\tier1\c18_micro_01_mixed.yaml --out C:\cemt_runs\c18
+cd C:\cemt_runs\c18
+docker build -t cemt-node .
+docker compose up --abort-on-container-exit probe
+docker compose down
+```
 
 The compose run adds what the local harness cannot: zone and group
 networks are real, so a delivery to a node outside the sender's zone fails

@@ -1,10 +1,11 @@
 id: c18_micro_01_mixed
 spec_version: '0.1'
-description: 'Eight-node micro-system. A vendor update server (external governance)
-  supplies Execution Pathway to two hosts through a channel; a config server supplies
-  Authority to three hosts through a control plane; a database is a dependency of
-  two application hosts and is the sole supplier of X to app-2 (a Cut). Structural
-  correspondence scenario: deterministic mode.
+description: 'Eight-node micro-system in Paper 1B terms. A vendor update server (external
+  governance) directs two hosts through a directing control plane, i.e. directing
+  External Trust; a config server directs three hosts through a directing control
+  plane; a database lies on the channel (route) supplying Execution Pathway to two
+  application hosts and is the sole X supply to app-2 (a Cut). Structural correspondence
+  scenario: deterministic mode.
 
   '
 governance:
@@ -128,44 +129,44 @@ relations:
   group: null
 - supplier: vendor-update
   receiver: web-1
-  condition: X
-  relation_class: channel
+  condition: A
+  relation_class: control_plane_directing
   conferral: true
-  group: ch-vendor
+  group: upd-vendor
 - supplier: vendor-update
   receiver: web-2
-  condition: X
-  relation_class: channel
+  condition: A
+  relation_class: control_plane_directing
   conferral: true
-  group: ch-vendor
+  group: upd-vendor
 - supplier: config-server
   receiver: app-1
   condition: A
-  relation_class: control_plane
+  relation_class: control_plane_directing
   conferral: true
   group: cp-main
 - supplier: config-server
   receiver: host-3
   condition: A
-  relation_class: control_plane
+  relation_class: control_plane_directing
   conferral: true
   group: cp-main
 - supplier: config-server
   receiver: db-1
   condition: A
-  relation_class: control_plane
+  relation_class: control_plane_directing
   conferral: true
   group: cp-main
 - supplier: db-1
   receiver: app-1
   condition: X
-  relation_class: dependency
+  relation_class: channel
   conferral: false
   group: null
 - supplier: db-1
   receiver: app-2
   condition: X
-  relation_class: dependency
+  relation_class: channel
   conferral: false
   group: null
 entry_node: web-1

@@ -47,14 +47,48 @@ class Condition(str, Enum):
 
 class RelationClass(str, Enum):
     """
-    Paper 1B relation classes through which a condition instance is supplied.
-    These are the mechanisms Code80 already implements, named by what they
-    supply rather than by their code path.
+    Paper 1B relation classes (Table 1 rows). Level (system vs system of
+    systems) is derived from governance, so Concentration, Dependency and
+    External Trust are these same classes with the crossing indicator set.
+
+    connection                 Interface row. Standing admission from a source
+                               at another node. Supplies I.
+    channel                    Execution Pathway row. Standing route from an
+                               interface to a mechanism traversing another
+                               node (1B Channel; Dependency when it crosses
+                               governance). Supplies X.
+    control_plane_directing    Authority row, directing form. A composition
+                               I(c,i) ∧ X(i,m) ∧ A(m,q): admission from the
+                               controller is configured at the member, X and
+                               A are local. Supplies I; directs the exercise
+                               of A. External Trust (directing) when the
+                               controller is external, e.g. a vendor update
+                               agent acting on vendor content.
+    control_plane_conferring   Authority row, conferring form. An artefact
+                               issued elsewhere establishes A(m,q), e.g. an
+                               identity provider. Supplies A only; admits
+                               nothing.
     """
-    CONNECTION = "connection"      # zone adjacency: supplies I to a peer
-    CHANNEL = "channel"            # root-to-member delivery: supplies X
-    CONTROL_PLANE = "control_plane"  # governance membership: supplies A
-    DEPENDENCY = "dependency"      # directed service dependency: supplies X
+    CONNECTION = "connection"
+    CHANNEL = "channel"
+    CONTROL_PLANE_DIRECTING = "control_plane_directing"
+    CONTROL_PLANE_CONFERRING = "control_plane_conferring"
+
+
+# standing supply per class (Paper 1B Sections 3.4, 3.5)
+CLASS_SUPPLIES = {
+    RelationClass.CONNECTION:               ("I",),
+    RelationClass.CHANNEL:                  ("X",),
+    RelationClass.CONTROL_PLANE_DIRECTING:  ("I",),      # A is local and directed
+    RelationClass.CONTROL_PLANE_CONFERRING: ("A",),
+}
+# condition the relation row is declared on (Table 1 row)
+CLASS_ROW = {
+    RelationClass.CONNECTION:               Condition.INTERFACE,
+    RelationClass.CHANNEL:                  Condition.EXECUTION_PATHWAY,
+    RelationClass.CONTROL_PLANE_DIRECTING:  Condition.AUTHORITY,
+    RelationClass.CONTROL_PLANE_CONFERRING: Condition.AUTHORITY,
+}
 
 
 class Level(str, Enum):
@@ -121,8 +155,8 @@ class Relation:
     receiver: str
     condition: Condition
     relation_class: RelationClass
-    conferral: bool = False   # supplier compromise confers the condition
-    group: Optional[str] = None   # channel / control-plane identifier
+    conferral: bool = False   # supplier compromise confers attacker position
+    group: Optional[str] = None   # control-plane identifier
 
 
 # ---------------------------------------------------------------------------
@@ -252,6 +286,11 @@ class ScenarioSpec:
             problems.append(f"entry_node {self.entry_node} not a node")
         if self.entry_node is not None and not self.node(self.entry_node).interface:
             problems.append(f"entry_node {self.entry_node} has no Interface")
+        for r in self.relations:
+            if r.condition != CLASS_ROW[r.relation_class]:
+                problems.append(f"relation {r.supplier}->{r.receiver}: class "
+                                f"{r.relation_class.value} sits on row "
+                                f"{CLASS_ROW[r.relation_class].value}, not {r.condition.value}")
         if not self.ablation.structure and any(
                 r.relation_class != RelationClass.DEPENDENCY for r in self.relations):
             # TA ablation: relations are present in the spec but inert in the

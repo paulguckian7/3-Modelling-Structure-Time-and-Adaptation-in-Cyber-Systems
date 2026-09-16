@@ -8,9 +8,9 @@ Render a ScenarioSpec to the Docker micro-system.
 Network realisation
   zone-<z>       one bridge network per zone; a node joins the networks of its
                  zones, so connection reachability is physical, not configured
-  grp-<group>    one network per channel or control-plane group (root or
-                 controller plus members)
-  dep            one network for all dependency edges
+  grp-<group>    one network per directing control plane (controller plus
+                 members) and per conferring plane (issuer plus members)
+  route          one network for all channel edges
   observer       the probe's network, joined by every node
 
 Tokens make channel and control-plane membership real: a member accepts a
@@ -37,43 +37,29 @@ def node_envs(spec: ScenarioSpec, addrs: Dict[str, str] | None = None) -> Dict[s
     peers: Dict[str, set] = defaultdict(set)
     x_sup: Dict[str, set] = defaultdict(set)
     a_sup: Dict[str, set] = defaultdict(set)
-    ch_root: Dict[str, str] = {}
-    ch_members: Dict[str, List[str]] = defaultdict(list)
     cp_ctl: Dict[str, str] = {}
     cp_members: Dict[str, List[str]] = defaultdict(list)
-    dep_down: Dict[str, List[str]] = defaultdict(list)
+    ch_down: Dict[str, List[str]] = defaultdict(list)
 
     for r in spec.relations:
         if r.relation_class == RelationClass.CONNECTION:
             peers[r.supplier].add(r.receiver)
             peers[r.receiver].add(r.supplier)          # symmetric adjacency
         elif r.relation_class == RelationClass.CHANNEL:
-            g = r.group or f"ch-{r.supplier}"
-            ch_root[g] = r.supplier
-            ch_members[g].append(r.receiver)
-            if r.condition == Condition.EXECUTION_PATHWAY:
-                x_sup[r.receiver].add(r.supplier)     # standing X supply
-        elif r.relation_class == RelationClass.CONTROL_PLANE:
-            g = r.group or f"cp-{r.supplier}"
+            ch_down[r.supplier].append(r.receiver)
+            x_sup[r.receiver].add(r.supplier)          # standing X supply
+        elif r.relation_class == RelationClass.CONTROL_PLANE_DIRECTING:
+            g = r.group or f"cpd-{r.supplier}"
             cp_ctl[g] = r.supplier
-            cp_members[g].append(r.receiver)
-            if r.condition == Condition.AUTHORITY:
-                a_sup[r.receiver].add(r.supplier)     # static A supply
-        elif r.relation_class == RelationClass.DEPENDENCY:
-            dep_down[r.supplier].append(r.receiver)
-            if r.condition == Condition.EXECUTION_PATHWAY:
-                x_sup[r.receiver].add(r.supplier)     # static X supply
+            cp_members[g].append(r.receiver)           # supplies admission
+        elif r.relation_class == RelationClass.CONTROL_PLANE_CONFERRING:
+            a_sup[r.receiver].add(r.supplier)          # standing A supply
 
-    member_ch_tokens: Dict[str, List[str]] = defaultdict(list)
-    for g, mem in ch_members.items():
-        for m in mem:
-            member_ch_tokens[m].append(f"tok-{g}")
     member_cp_tokens: Dict[str, List[str]] = defaultdict(list)
     for g, mem in cp_members.items():
         for m in mem:
             member_cp_tokens[m].append(f"tok-{g}")
 
-    root_of: Dict[str, str] = {root: g for g, root in ch_root.items()}
     ctl_of: Dict[str, str] = {ctl: g for g, ctl in cp_ctl.items()}
 
     envs: Dict[str, Dict[str, str]] = {}
@@ -87,14 +73,9 @@ def node_envs(spec: ScenarioSpec, addrs: Dict[str, str] | None = None) -> Dict[s
             "X_SUPPLIERS": ",".join(sorted(x_sup[n.id])),
             "A_SUPPLIERS": ",".join(sorted(a_sup[n.id])),
             "CONN_PEERS": ",".join(sorted(peers[n.id])),
-            "DEP_DOWNSTREAM": ",".join(sorted(dep_down[n.id])),
-            "CHANNEL_MEMBER_TOKENS": ",".join(member_ch_tokens[n.id]),
+            "CHANNEL_DOWNSTREAM": ",".join(sorted(ch_down[n.id])),
             "CP_MEMBER_TOKENS": ",".join(member_cp_tokens[n.id]),
         }
-        if n.id in root_of:
-            g = root_of[n.id]
-            e["CHANNEL_MEMBERS"] = ",".join(sorted(ch_members[g]))
-            e["CHANNEL_TOKEN"] = f"tok-{g}"
         if n.id in ctl_of:
             g = ctl_of[n.id]
             e["CP_GROUP"] = g
@@ -108,7 +89,7 @@ def node_envs(spec: ScenarioSpec, addrs: Dict[str, str] | None = None) -> Dict[s
 
 def compose_dict(spec: ScenarioSpec) -> Dict:
     envs = node_envs(spec)
-    networks = {"observer": {}, "dep": {}}
+    networks = {"observer": {}, "route": {}}
     services: Dict[str, Dict] = {}
     for n in spec.nodes:
         nets = ["observer"]
@@ -116,25 +97,26 @@ def compose_dict(spec: ScenarioSpec) -> Dict:
             nets.append(f"zone-{z}")
             networks[f"zone-{z}"] = {}
         services[n.id] = {
-            "build": ".",
+            "image": "cemt-node",
             "container_name": f"cemt-{spec.id}-{n.id}",
             "hostname": n.id,
             "environment": envs[n.id],
             "networks": nets,
         }
     for r in spec.relations:
-        if r.relation_class in (RelationClass.CHANNEL, RelationClass.CONTROL_PLANE):
+        if r.relation_class in (RelationClass.CONTROL_PLANE_DIRECTING,
+                                RelationClass.CONTROL_PLANE_CONFERRING):
             g = f"grp-{r.group or r.supplier}"
             networks[g] = {}
             for side in (r.supplier, r.receiver):
                 if g not in services[side]["networks"]:
                     services[side]["networks"].append(g)
-        elif r.relation_class == RelationClass.DEPENDENCY:
+        elif r.relation_class == RelationClass.CHANNEL:
             for side in (r.supplier, r.receiver):
-                if "dep" not in services[side]["networks"]:
-                    services[side]["networks"].append("dep")
+                if "route" not in services[side]["networks"]:
+                    services[side]["networks"].append("route")
     services["probe"] = {
-        "build": ".",
+        "image": "cemt-node",
         "container_name": f"cemt-{spec.id}-probe",
         "command": ["python", "probe.py", "/app/spec.yaml", "--out", "/app/out/probe.json"],
         "volumes": ["./out:/app/out"],
@@ -179,4 +161,4 @@ if __name__ == "__main__":
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     d = write_bundle(load_spec(a.spec), a.out)
-    print(f"bundle written to {d}\n  cd {d} && docker compose up --build --abort-on-container-exit probe")
+    print(f"bundle written to {d}\n  cd {d}\n  docker build -t cemt-node .\n  docker compose up --abort-on-container-exit probe")

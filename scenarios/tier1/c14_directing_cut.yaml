@@ -1,6 +1,6 @@
-id: c13_cp_cut
+id: c14_directing_cut
 spec_version: '0.1'
-description: Member's only Authority supply is the plane controller.
+description: Member's only admission is a directing controller.
 governance:
 - id: estate
   defender_controlled: true
@@ -32,12 +32,11 @@ nodes:
   governance: estate
   interface: false
   execution_pathway: true
-  authority: false
+  authority: true
   state_object: state
   visible: true
   impact: 1.0
-  zones:
-  - 1
+  zones: []
 relations:
 - supplier: a
   receiver: ctl
@@ -45,16 +44,10 @@ relations:
   relation_class: connection
   conferral: false
   group: null
-- supplier: a
-  receiver: m
-  condition: I
-  relation_class: connection
-  conferral: false
-  group: null
 - supplier: ctl
   receiver: m
   condition: A
-  relation_class: control_plane
+  relation_class: control_plane_directing
   conferral: true
   group: cp
 entry_node: a

@@ -44,18 +44,21 @@ def conn(a, b):
     return Relation(a, b, Condition.INTERFACE, RelationClass.CONNECTION)
 
 
-def chan(root, m, g):
-    return Relation(root, m, Condition.EXECUTION_PATHWAY, RelationClass.CHANNEL,
+def chan(up, down):
+    """1B Channel: standing route supplying X; Dependency when it crosses governance."""
+    return Relation(up, down, Condition.EXECUTION_PATHWAY, RelationClass.CHANNEL)
+
+
+def cpd(ctl, m, g):
+    """1B directing control plane: admission composed, A local and directed."""
+    return Relation(ctl, m, Condition.AUTHORITY, RelationClass.CONTROL_PLANE_DIRECTING,
                     conferral=True, group=g)
 
 
-def cp(ctl, m, g):
-    return Relation(ctl, m, Condition.AUTHORITY, RelationClass.CONTROL_PLANE,
-                    conferral=True, group=g)
-
-
-def dep(up, down):
-    return Relation(up, down, Condition.EXECUTION_PATHWAY, RelationClass.DEPENDENCY)
+def cpc(iss, m, g):
+    """1B conferring control plane: issuer establishes A, admits nothing."""
+    return Relation(iss, m, Condition.AUTHORITY, RelationClass.CONTROL_PLANE_CONFERRING,
+                    group=g)
 
 
 GOV = [Governance("estate", True), Governance("vendor", False)]
@@ -117,48 +120,48 @@ add(spec("c05_no_authority", "Adjacent node lacks Authority and has no A supplie
     claim="negative control: 1A Authority necessary")
 
 # c06 channel delivery from an external root (supply chain), members only
-add(spec("c06_channel_delivery", "Vendor root delivers to channel members only; non-member untouched.",
+add(spec("c06_directing_external_trust", "Vendor directs two update agents (directing External Trust); non-member untouched.",
          [N("vendor", "vendor", I=True, state="feed"), N("m1", zones=[1]), N("m2", zones=[2]), N("other", zones=[3])],
-         [chan("vendor", "m1", "ch"), chan("vendor", "m2", "ch")], "vendor"),
-    must_reach=["m1", "m2"], must_not_reach=["other"], reach_step={"m1": 1, "m2": 1},
-    claim="1B system-of-systems relation; channel bypasses node Interface")
+         [cpd("vendor", "m1", "upd"), cpd("vendor", "m2", "upd")], "vendor"),
+    must_reach=["m1", "m2"], must_not_reach=["other"], reach_step={"m1": 2, "m2": 2},
+    claim="1B 3.5 directing External Trust: composition admits vendor content; owned at step 1, pushed at step 2")
 
 # c07 channel confers X to a member lacking it
-add(spec("c07_channel_confers_x", "Member lacks Execution Pathway; channel delivery confers it.",
-         [N("vendor", "vendor", I=True, state="feed"), N("m1", X=False, zones=[1]), N("peer", zones=[1])],
-         [chan("vendor", "m1", "ch"), conn("m1", "peer")], "vendor"),
-    must_reach=["m1", "peer"], reach_step={"m1": 1, "peer": 2},
-    claim="1B conferral: a relation supplies a condition the node lacks")
+add(spec("c07_directing_needs_local_x", "Directed member lacks a local Execution Pathway; vendor content cannot be given effect.",
+         [N("vendor", "vendor", I=True, state="feed"), N("m1", X=False, zones=[1]), N("m2", zones=[1])],
+         [cpd("vendor", "m1", "upd"), cpd("vendor", "m2", "upd")], "vendor"),
+    must_reach=["m2"], must_not_reach=["m1"], reach_step={"m2": 2},
+    claim="negative control: directing form supplies admission and direction, not the route (1A CrowdStrike: X is local)")
 
 # c08 control plane conferral: members lacking A are reached through the plane; one has no admission and is not
-add(spec("c08_control_plane_conferral", "Controller compromised laterally; plane confers A to members.",
-         [N("a", I=True, zones=[0, 1]), N("ctl", zones=[1]), N("m1", A=False, zones=[2]),
-          N("m2", A=False, zones=[2]), N("m_planeonly", A=False, zones=[])],
-         [conn("a", "ctl"), conn("m1", "m2"), cp("ctl", "m1", "cp"), cp("ctl", "m2", "cp"), cp("ctl", "m_planeonly", "cp")], "a"),
-    must_reach=["ctl", "m1", "m2", "m_planeonly"],
-    reach_step={"ctl": 1, "m1": 3, "m2": 3, "m_planeonly": 3},
-    claim="1B Authority conferred through control plane; plane membership is itself admission")
+add(spec("c08_conferring_control_plane", "Issuer establishes A for members lacking it; reach still needs admission.",
+         [N("a", I=True, zones=[0, 1]), N("iss", zones=[9]), N("m1", A=False, zones=[1]),
+          N("m2", A=False, zones=[1]), N("m_noadmit", A=False, zones=[])],
+         [conn("a", "m1"), conn("a", "m2"), cpc("iss", "m1", "idp"), cpc("iss", "m2", "idp"), cpc("iss", "m_noadmit", "idp")], "a"),
+    must_reach=["m1", "m2"], must_not_reach=["iss", "m_noadmit"],
+    reach_step={"m1": 1, "m2": 1},
+    claim="1B 3.4 conferring form supplies A only; it admits nothing, so an unadmitted member stays unreached")
 
 # c09 detection window timing: reach steps are exact through a chain with a plane in it
 add(spec("c09_cp_timing", "Plane ownership one step after controller activation, push one step later.",
-         [N("a", I=True, zones=[0, 1]), N("ctl", zones=[1]), N("m", A=False, zones=[5])],
-         [conn("a", "ctl"), cp("ctl", "m", "cp")], "a"),
+         [N("a", I=True, zones=[0, 1]), N("ctl", zones=[1]), N("m", zones=[5])],
+         [conn("a", "ctl"), cpd("ctl", "m", "cp")], "a"),
     must_reach=["ctl", "m"], reach_step={"ctl": 1, "m": 3},
     claim="Paper 2 Time: one-step detection window at each stage")
 
 # c10 dependency cascade bypasses admission
-add(spec("c10_dependency_cascade", "Downstream nodes with no admission fail through dependency.",
+add(spec("c10_channel_route_cascade", "Compromise moves along a channel route to downstream mechanisms.",
          [N("a", I=True, zones=[0, 1]), N("up", zones=[1]), N("d1", zones=[]), N("d2", zones=[])],
-         [conn("a", "up"), dep("up", "d1"), dep("d1", "d2")], "a"),
+         [conn("a", "up"), chan("up", "d1"), chan("d1", "d2")], "a"),
     must_reach=["up", "d1", "d2"], must_not_reach=[], reach_step={"up": 1, "d1": 2, "d2": 3},
-    claim="1B dependency relation supplies X; failure propagates without admission")
+    claim="1B Channel: a compromised node on the route holds a position on downstream X")
 
 # c11 dependency cut
-add(spec("c11_dependency_cut", "Receiver's only X supply is one dependency.",
+add(spec("c11_channel_cut", "Receiver's only X supply is one channel route.",
          [N("a", I=True, zones=[0, 1]), N("up", zones=[1]), N("r", X=False, zones=[1])],
-         [conn("a", "up"), conn("a", "r"), dep("up", "r")], "a"),
+         [conn("a", "up"), conn("a", "r"), chan("up", "r")], "a"),
     must_reach=["up", "r"], cut_removals={"up": ["r"]},
-    claim="1B Cut on dependency: removing the sole X supplier makes r unreachable")
+    claim="1B Cut on channel: removing the sole X supplier makes r unreachable")
 
 # c12 connection cut
 add(spec("c12_connection_cut", "Receiver's only admission is one peer.",
@@ -168,18 +171,18 @@ add(spec("c12_connection_cut", "Receiver's only admission is one peer.",
     claim="1B Cut on connection: sole admitting neighbour")
 
 # c13 control-plane cut
-add(spec("c13_cp_cut", "Member's only Authority supply is the plane controller.",
-         [N("a", I=True, zones=[0, 1]), N("ctl", zones=[1]), N("m", A=False, zones=[1])],
-         [conn("a", "ctl"), conn("a", "m"), cp("ctl", "m", "cp")], "a"),
-    must_reach=["ctl", "m"], cut_removals={"ctl": ["m"]},
-    claim="1B Cut on control plane: removing the controller removes A")
+add(spec("c13_conferring_cut", "Member's only Authority supply is a conferring issuer.",
+         [N("a", I=True, zones=[0, 1]), N("iss", zones=[9]), N("m", A=False, zones=[1])],
+         [conn("a", "m"), cpc("iss", "m", "idp")], "a"),
+    must_reach=["m"], must_not_reach=["iss"], cut_removals={"iss": ["m"]},
+    claim="1B Cut on the Authority row: removing the issuer removes A")
 
 # c14 channel cut
-add(spec("c14_channel_cut", "Member's only X supply is the channel root.",
-         [N("vendor", "vendor", I=True, state="feed"), N("m", X=False, zones=[1]), N("peer", I=True, zones=[0, 1])],
-         [chan("vendor", "m", "ch"), conn("peer", "m")], "peer"),
-    must_reach=["peer", "m"], reach_step={"m": 1}, cut_removals={"vendor": ["m"]},
-    claim="1B Cut on channel: a healthy root supplies X standing; removing it makes m unreachable")
+add(spec("c14_directing_cut", "Member's only admission is a directing controller.",
+         [N("a", I=True, zones=[0, 1]), N("ctl", zones=[1]), N("m", zones=[])],
+         [conn("a", "ctl"), cpd("ctl", "m", "cp")], "a"),
+    must_reach=["ctl", "m"], reach_step={"m": 3}, cut_removals={"ctl": ["m"]},
+    claim="1B Cut on the Interface supplied by a directing plane: removing the controller removes admission")
 
 # c15 fan-out
 add(spec("c15_fanout", "Hub adjacent to six leaves; all reached at step 1.",
@@ -191,15 +194,15 @@ add(spec("c15_fanout", "Hub adjacent to six leaves; all reached at step 1.",
 # c16 governance boundary not crossed inward
 add(spec("c16_boundary_not_crossed", "Vendor node has no inbound relation from the estate.",
          [N("a", I=True, zones=[0, 1]), N("b", zones=[1]), N("vendor", "vendor", I=True, state="feed"), N("m", zones=[2])],
-         [conn("a", "b"), chan("vendor", "m", "ch")], "a"),
+         [conn("a", "b"), cpd("vendor", "m", "upd")], "a"),
     must_reach=["b"], must_not_reach=["vendor", "m"],
     claim="negative control: system-of-systems relation runs vendor to estate only")
 
 # c17 two planes with an overlapping member
 add(spec("c17_two_planes", "Two controllers, one shared member; second plane reached via the shared member.",
-         [N("a", I=True, zones=[0, 1]), N("c1", zones=[1]), N("s", A=False, zones=[2]), N("c2", zones=[2]),
-          N("m2", A=False, zones=[3])],
-         [conn("a", "c1"), cp("c1", "s", "p1"), conn("s", "c2"), cp("c2", "m2", "p2")], "a"),
+         [N("a", I=True, zones=[0, 1]), N("c1", zones=[1]), N("s", zones=[2]), N("c2", zones=[2]),
+          N("m2", zones=[3])],
+         [conn("a", "c1"), cpd("c1", "s", "p1"), conn("s", "c2"), cpd("c2", "m2", "p2")], "a"),
     must_reach=["c1", "s", "c2", "m2"], reach_step={"c1": 1, "s": 3, "c2": 4, "m2": 6},
     claim="conferral chains across planes with the detection window at each stage")
 
@@ -215,13 +218,13 @@ add(_micro, must_reach=["app-1", "app-2", "config-server", "db-1", "web-1", "web
 # c19 cycle terminates
 add(spec("c19_cycle", "Dependency cycle and connection loop; run must terminate.",
          [N("a", I=True, zones=[0, 1]), N("b", zones=[1]), N("c", zones=[1])],
-         [conn("a", "b"), conn("b", "c"), dep("a", "b"), dep("b", "c"), dep("c", "a")], "a"),
+         [conn("a", "b"), conn("b", "c"), chan("a", "b"), chan("b", "c"), chan("c", "a")], "a"),
     must_reach=["b", "c"], claim="termination under cyclic structure")
 
 # c20 X supplied statically by dependency, reached laterally (supply without failure)
 add(spec("c20_static_x_supply", "Node lacks X; dependency supplies it statically; reached by connection while upstream is healthy.",
          [N("a", I=True, zones=[0, 1]), N("r", X=False, zones=[1]), N("up", zones=[9])],
-         [conn("a", "r"), dep("up", "r")], "a"),
+         [conn("a", "r"), chan("up", "r")], "a"),
     must_reach=["r"], must_not_reach=["up"], reach_step={"r": 1}, cut_removals={"up": ["r"]},
     claim="1B: a relation supplies a condition without the supplier being compromised; Cut still holds")
 
@@ -230,6 +233,12 @@ add(spec("c20_static_x_supply", "Node lacks X; dependency supplies it statically
 
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
+    # remove scenario files not in the current set (renamed or withdrawn),
+    # so the frozen directory contains exactly the manifest's scenarios
+    keep = {f"{s.id}.yaml" for s, _ in SET} | {"manifest.yaml"}
+    for f in os.listdir(OUT):
+        if f.endswith(".yaml") and f not in keep:
+            os.remove(os.path.join(OUT, f))
     manifest = {}
     for s, exp in SET:
         problems = s.validate()

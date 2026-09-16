@@ -49,9 +49,9 @@ packs) stays out of this package by design.
 |--------|-----------|--------|
 | `node_external`, `privilege_prob`, `execution_prob` | `Node.interface`, `Node.authority`, `Node.execution_pathway` | Privilege becomes Authority; Beta draws move to the network builder and are bypassed in deterministic mode |
 | `threat_capability` in the kill chain | `RateSpec.threat_capability` | now explicitly payload/delivery pressure, outside the triad |
-| `node_channels_base`, `channel_root`, `channel_is_external` | relations of class `channel`, level `sos` when the root is in an external governance domain | phantom root becomes a real node in a non-defender-controlled governance domain |
-| `control_planes`, `cp_member_indices` | relations of class `control_plane` supplying A, `conferral: true` | takeover confers Authority to members |
-| `dep_targets` | relations of class `dependency` supplying X | unchanged semantics |
+| `node_channels_base`, `channel_root`, `channel_is_external` | `control_plane_directing` rows from an external controller (directing External Trust) | phantom root becomes a real node in a non-defender-controlled governance domain |
+| `control_planes`, `cp_member_indices` | `control_plane_directing` rows, `conferral: true` | takeover gives the attacker the controller's position |
+| `dep_targets` | `channel` rows supplying X | 1B Channel / Dependency |
 | `dep_out_degree`, channel/CP member counts | `RelationTable.fan_out()` | unified, per class and per level |
 | (absent) | `RelationTable.cut()` | new; verified in Docker by container removal |
 | `active_layers` | `AblationSpec` (structure / time / adaptation) | STA labels replace layer index lists |
@@ -68,14 +68,21 @@ expectations in `manifest.yaml`, run by `python -m docker_render.tier1_set`).
 Negative controls are c02 to c05 and c16: a condition or relation absent by
 design.
 
-Supply semantics fixed by the set (Sept 2026):
-* every relation row is a standing supply; compromise of the supplier
-  additionally confers attacker access (conferral)
-* connection supplies I; channel supplies I and X; control plane supplies
-  I and A; dependency supplies X and propagates failure. Channel and plane
-  membership are admission relations (1A, CrowdStrike: the channel is the
-  Interface), so a plane member with no other relation is still reachable
-  through its plane.
+Relation classes are Paper 1B's Table 1 rows, level derived from governance:
+* connection (I row): standing admission, symmetric; supplies I.
+* channel (X row; Dependency when governance-crossing): standing route;
+  supplies X. A compromised node on the route holds a position on
+  downstream X.
+* control_plane_directing (A row, directing form; External Trust when the
+  controller is external): a composition that admits the controller's input
+  at the member; supplies I; X and A are local. The vendor update case.
+* control_plane_conferring (A row, conferring form): an issuer establishes
+  A; supplies A only, admits nothing.
+Every relation row is a standing supply; compromise of the supplier
+additionally confers a position from which the receiver can be reached.
+The tier 1 set found and corrected two earlier misreadings: a vendor update
+relation does not supply the member's Execution Pathway (1A CrowdStrike:
+the route is local), and the conferring form does not admit.
 
 Tier 2, temporal, ordinal. With `latency_steps` and a remediation agent, event
 order and observation lag must agree ordinally. No magnitudes.
@@ -98,3 +105,12 @@ print(rt.summary()); print(rt.cut_table())"
 3. Correspondence set results committed (per-scenario agreement table).
 4. Any later structural change requires a declared model revision with a
    new `CORE_VERSION`; parameter and condition changes do not.
+
+## Freeze and pre-registration
+
+`python -m docker_render.freeze` records SHA-256 hashes of the core package,
+renderer, scenario set and manifest in `FREEZE.md` and `freeze.json`;
+`--verify` checks the tree against the record. `tier1_set` writes
+`tier1_run_record.json` with the digest it ran against and marks the run
+PRE-REGISTERED only if the frozen set verifies. `CHANGES.md` is the
+development record, including what the set caught and when.

@@ -53,44 +53,43 @@ c05_no_authority:
   - b
   reach_step: {}
   cut_removals: {}
-c06_channel_delivery:
-  file: c06_channel_delivery.yaml
-  claim: 1B system-of-systems relation; channel bypasses node Interface
+c06_directing_external_trust:
+  file: c06_directing_external_trust.yaml
+  claim: '1B 3.5 directing External Trust: composition admits vendor content; owned
+    at step 1, pushed at step 2'
   must_reach:
   - m1
   - m2
   must_not_reach:
   - other
   reach_step:
-    m1: 1
-    m2: 1
+    m1: 2
+    m2: 2
   cut_removals: {}
-c07_channel_confers_x:
-  file: c07_channel_confers_x.yaml
-  claim: '1B conferral: a relation supplies a condition the node lacks'
+c07_directing_needs_local_x:
+  file: c07_directing_needs_local_x.yaml
+  claim: 'negative control: directing form supplies admission and direction, not the
+    route (1A CrowdStrike: X is local)'
   must_reach:
+  - m2
+  must_not_reach:
   - m1
-  - peer
-  must_not_reach: []
   reach_step:
-    m1: 1
-    peer: 2
+    m2: 2
   cut_removals: {}
-c08_control_plane_conferral:
-  file: c08_control_plane_conferral.yaml
-  claim: 1B Authority conferred through control plane; plane membership is itself
-    admission
+c08_conferring_control_plane:
+  file: c08_conferring_control_plane.yaml
+  claim: 1B 3.4 conferring form supplies A only; it admits nothing, so an unadmitted
+    member stays unreached
   must_reach:
-  - ctl
   - m1
   - m2
-  - m_planeonly
-  must_not_reach: []
+  must_not_reach:
+  - iss
+  - m_noadmit
   reach_step:
-    ctl: 1
-    m1: 3
-    m2: 3
-    m_planeonly: 3
+    m1: 1
+    m2: 1
   cut_removals: {}
 c09_cp_timing:
   file: c09_cp_timing.yaml
@@ -103,9 +102,10 @@ c09_cp_timing:
     ctl: 1
     m: 3
   cut_removals: {}
-c10_dependency_cascade:
-  file: c10_dependency_cascade.yaml
-  claim: 1B dependency relation supplies X; failure propagates without admission
+c10_channel_route_cascade:
+  file: c10_channel_route_cascade.yaml
+  claim: '1B Channel: a compromised node on the route holds a position on downstream
+    X'
   must_reach:
   - d1
   - d2
@@ -116,9 +116,9 @@ c10_dependency_cascade:
     d1: 2
     d2: 3
   cut_removals: {}
-c11_dependency_cut:
-  file: c11_dependency_cut.yaml
-  claim: '1B Cut on dependency: removing the sole X supplier makes r unreachable'
+c11_channel_cut:
+  file: c11_channel_cut.yaml
+  claim: '1B Cut on channel: removing the sole X supplier makes r unreachable'
   must_reach:
   - r
   - up
@@ -138,29 +138,29 @@ c12_connection_cut:
   cut_removals:
     mid:
     - r
-c13_cp_cut:
-  file: c13_cp_cut.yaml
-  claim: '1B Cut on control plane: removing the controller removes A'
+c13_conferring_cut:
+  file: c13_conferring_cut.yaml
+  claim: '1B Cut on the Authority row: removing the issuer removes A'
+  must_reach:
+  - m
+  must_not_reach:
+  - iss
+  reach_step: {}
+  cut_removals:
+    iss:
+    - m
+c14_directing_cut:
+  file: c14_directing_cut.yaml
+  claim: '1B Cut on the Interface supplied by a directing plane: removing the controller
+    removes admission'
   must_reach:
   - ctl
   - m
   must_not_reach: []
-  reach_step: {}
+  reach_step:
+    m: 3
   cut_removals:
     ctl:
-    - m
-c14_channel_cut:
-  file: c14_channel_cut.yaml
-  claim: '1B Cut on channel: a healthy root supplies X standing; removing it makes
-    m unreachable'
-  must_reach:
-  - m
-  - peer
-  must_not_reach: []
-  reach_step:
-    m: 1
-  cut_removals:
-    vendor:
     - m
 c15_fanout:
   file: c15_fanout.yaml
