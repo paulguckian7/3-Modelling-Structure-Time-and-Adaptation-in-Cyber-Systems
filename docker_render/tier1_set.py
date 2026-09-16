@@ -63,12 +63,28 @@ def run_docker(spec_path: str, runs_dir: str, removed: str | None = None) -> dic
             _compose(bundle, "down", "--remove-orphans", timeout=300)
         except Exception:
             pass
+        if removed:
+            # Removal: the removed node is never started, and every other node
+            # is told its address is a port that refuses immediately. A stopped
+            # container's name leaves Docker's embedded DNS and the lookup is
+            # forwarded upstream, which can stall for seconds and is outside the
+            # service's socket timeout; that stall delayed a later push past the
+            # probe's per-action timeout in c18 (first Docker run, 2026-09-16).
+            # This makes container removal behave as the harness does: the
+            # node is simply gone.
+            cpath = os.path.join(bundle, "compose.yaml")
+            with open(cpath) as f:
+                comp = yaml.safe_load(f)
+            for name, svc in comp["services"].items():
+                if name in ("probe", removed):
+                    continue
+                svc.setdefault("environment", {})["ADDRS"] = f"{removed}=127.0.0.1:1"
+            with open(cpath, "w") as f:
+                yaml.safe_dump(comp, f, sort_keys=False)
         # start the node services only: the probe service in the compose file
         # would otherwise run the scenario itself on `up`
-        node_services = [n.id for n in spec.nodes]
+        node_services = [n.id for n in spec.nodes if n.id != removed]
         _compose(bundle, "up", "-d", "--force-recreate", "--remove-orphans", *node_services)
-        if removed:
-            _compose(bundle, "stop", removed)
         cmd = ["run", "--rm", "--no-deps", "probe", "python", "probe.py", "/app/spec.yaml",
                "--out", f"/app/out/{tag}"]
         if removed:
