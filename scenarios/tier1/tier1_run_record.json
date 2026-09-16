@@ -1,8 +1,8 @@
 {
   "core_version": "0.6-skeleton",
-  "run_at": "2026-09-16T16:44:37+00:00",
+  "run_at": "2026-09-16T16:51:52+00:00",
   "mode": "local_harness",
-  "frozen_set_digest": "e4d2982f255367fb16f7199a169a81a2c461b8427febe2167bbde7be42d6348b",
+  "frozen_set_digest": "5f93ed75f59a1e118e8051e96a9eaabe6bbcee4989ad7400b8c53809c2e8fe2d",
   "pre_registered": true,
   "n_pass": 20,
   "n": 20,
@@ -29,7 +29,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.4
+      "secs": 0.7
     },
     {
       "scenario": "c03_no_interface",
@@ -77,7 +77,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.7
+      "secs": 0.4
     },
     {
       "scenario": "c07_directing_needs_local_x",
@@ -125,7 +125,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.4
+      "secs": 0.7
     },
     {
       "scenario": "c11_channel_cut",
@@ -197,7 +197,7 @@
       "theory_model": "ok",
       "cuts": "-",
       "pass": true,
-      "secs": 0.4
+      "secs": 0.7
     },
     {
       "scenario": "c17_two_planes",
