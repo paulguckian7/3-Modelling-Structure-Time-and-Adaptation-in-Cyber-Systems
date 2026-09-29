@@ -1,4 +1,4 @@
-Paper 3 Structural Defensive Levers in Systemic Cyber Risk (v0.1)
+Paper 3 Modelling Structure, Time and Adaptation in Cyber Systems
 #cemt_core
 
 Frozen reference implementation of the CEMT/STA model, rebuilt from Paper 1A
